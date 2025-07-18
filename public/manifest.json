@@ -1,0 +1,40 @@
+{
+  "name": "IT Knecht",
+  "short_name": "IT Knecht",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7F00FF",
+  "icons": [
+    {
+      "src": "https://fl-group.org/wp-content/uploads/2025/05/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://fl-group.org/wp-content/uploads/2025/05/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+   ],
+  "screenshots": [
+    {
+      "src": "https://fl-group.org/wp-content/uploads/2025/06/Screenshot-2025-06-05-at-21.23.34.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "ITKnecht Dashboard op desktop"
+    },
+    {
+      "src": "https://fl-group.org/wp-content/uploads/2025/06/Screenshot-2025-06-05-at-21.23.34.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "ITKnecht Dashboard op mobiel"
+    }
+  ],
+  "categories": ["business", "finance", "productivity"],
+  "dir": "ltr",
+  "lang": "nl",
+  "prefer_related_applications": false
+}

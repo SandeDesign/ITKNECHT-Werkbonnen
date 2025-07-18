@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth text-base overflow-x-hidden antialiased;
+  }
+
+  html, body {
+    overflow-x: hidden;
+    position: relative;
+    overscroll-behavior-x: none;
+    min-width: 320px;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-50 transition-colors duration-150 antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    overscroll-behavior-y: none;
+  }
+
+  ::selection {
+    @apply bg-primary-500/20 text-primary-800 dark:text-primary-200;
+  }
+  
+  /* Prevent zoom on input focus on mobile */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  textarea,
+  select,
+  button,
+  a {
+    @apply text-base leading-normal;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Ensure touch targets are large enough */
+  button,
+  a,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"] {
+    @apply min-h-[44px] min-w-[44px];
+    touch-action: manipulation;
+  }
+
+  input, textarea, select, button {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900;
+  }
+
+  /* Responsive text sizing */
+  h1 { @apply text-2xl sm:text-3xl lg:text-4xl font-bold; }
+  h2 { @apply text-xl sm:text-2xl lg:text-3xl font-bold; }
+  h3 { @apply text-lg sm:text-xl lg:text-2xl font-semibold; }
+  h4 { @apply text-base sm:text-lg lg:text-xl font-semibold; }
+  p { @apply text-sm sm:text-base; }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-glass border border-gray-200 dark:border-gray-700;
+  }
+
+  /* Responsive container classes */
+  .container-sm { @apply max-w-screen-sm mx-auto px-4 sm:px-6; }
+  .container-md { @apply max-w-screen-md mx-auto px-4 sm:px-6 lg:px-8; }
+  .container-lg { @apply max-w-screen-lg mx-auto px-4 sm:px-6 lg:px-8; }
+  .container-xl { @apply max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8; }
+
+  /* Mobile-first grid system */
+  .grid-cols-responsive {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .grid-cols-responsive-2 {
+    @apply grid-cols-1 sm:grid-cols-2;
+  }
+
+  /* Responsive spacing utilities */
+  .spacing-x { @apply px-4 sm:px-6 lg:px-8; }
+  .spacing-y { @apply py-4 sm:py-6 lg:py-8; }
+  .spacing { @apply p-4 sm:p-6 lg:p-8; }
+  .gap { @apply gap-4 sm:gap-6 lg:gap-8; }
+
+  /* Responsive text utilities */
+  .text-responsive {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-lg {
+    @apply text-base sm:text-lg lg:text-xl;
+  }
+  
+  .transition-all {
+    transition-property: all;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .custom-transition {
+    transition-property: all;
+    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .slide-in-bottom {
+    animation: slide-in-bottom 0.3s ease-out both;
+  }
+
+  @keyframes slide-in-bottom {
+    0% {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}

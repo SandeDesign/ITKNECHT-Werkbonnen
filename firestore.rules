@@ -1,0 +1,82 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isOwner(userId) || isAdmin() ||
+        (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['phoneNumber', 'bio', 'department', 'expertise', 'projects', 
+                   'totalHoursWorked', 'totalWorkOrdersCompleted', 'totalKilometersDriven', 
+                   'lastWorkOrderDate', 'updatedAt', 'averageHourlyRate']));
+      allow delete: if isAdmin();
+    }
+
+    // Work orders collection
+    match /workOrders/{orderId} {
+      allow read: if isAuthenticated() && (isAdmin() || (resource.data.userId is string && request.auth.uid == resource.data.userId));
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+        (isAdmin() || resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // Todos collection
+    match /todos/{todoId} {
+      allow read: if isAuthenticated() && (isAdmin() || (resource.data.assignedTo is string && request.auth.uid == resource.data.assignedTo));
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+        (isAdmin() || resource.data.assignedTo == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // Articles collection
+    match /articles/{articleId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Contacts collection
+    match /contacts/{contactId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // Feedback collection
+    match /feedback/{feedbackId} {
+      allow read: if isAuthenticated() && (isAdmin() || (resource.data.userId is string && request.auth.uid == resource.data.userId));
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (isAdmin() || (resource.data.userId is string && request.auth.uid == resource.data.userId));
+      allow create: if isAuthenticated() && (isAdmin() || request.auth.uid == request.resource.data.userId);
+      allow update, delete: if isAdmin();
+    }
+    
+    // News collection
+    match /news/{newsId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}
