@@ -18,7 +18,9 @@ import {
   Home,
   BookOpen,
   Calendar,
-  Phone
+  Phone,
+  BarChart3,
+  MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardHome from '../../pages/DashboardHome';
@@ -133,6 +135,72 @@ const Dashboard = () => {
                 </Link>
               );
             })}
+            
+            {/* Extra menu items from screenshot */}
+            <Link
+              to="/dashboard/agenda"
+              onClick={closeSidebar}
+              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                location.pathname === '/dashboard/agenda'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <Calendar className="h-5 w-5" />
+              <span>Agenda</span>
+            </Link>
+            
+            <Link
+              to="/dashboard/stats"
+              onClick={closeSidebar}
+              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                location.pathname === '/dashboard/stats'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <BarChart3 className="h-5 w-5" />
+              <span>Mijn Statistieken</span>
+            </Link>
+            
+            <Link
+              to="/dashboard/contacts"
+              onClick={closeSidebar}
+              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                location.pathname === '/dashboard/contacts'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <Phone className="h-5 w-5" />
+              <span>Contacten</span>
+            </Link>
+            
+            <Link
+              to="/dashboard/ideas"
+              onClick={closeSidebar}
+              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                location.pathname === '/dashboard/ideas'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <MessageSquare className="h-5 w-5" />
+              <span>Ideeën bus</span>
+            </Link>
+            
+            <Link
+              to="/dashboard/resources"
+              onClick={closeSidebar}
+              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                location.pathname === '/dashboard/resources'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              <BookOpen className="h-5 w-5" />
+              <span>Bronnen</span>
+            </Link>
           </nav>
 
           {/* User Profile Section */}
