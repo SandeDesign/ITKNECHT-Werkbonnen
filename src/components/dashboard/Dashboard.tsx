@@ -15,7 +15,10 @@ import {
   Bell,
   ClipboardList,
   Plus,
-  Home
+  Home,
+  BookOpen,
+  Calendar,
+  Phone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardHome from '../../pages/DashboardHome';
@@ -228,22 +231,22 @@ const Dashboard = () => {
               <Home className="h-5 w-5" />
               <span className="text-xs">Home</span>
             </Link>
+            <Link to="/dashboard/resources" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/resources' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
+              <BookOpen className="h-5 w-5" />
+              <span className="text-xs">Bronnen</span>
+            </Link>
             <Link to="/dashboard/create" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/create' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
               <Plus className="h-5 w-5" />
-              <span className="text-xs">Werkbon</span>
+              <span className="text-xs">Werkbon+</span>
             </Link>
-            <Link to="/dashboard/werkbonnen" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/werkbonnen' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
-              <ClipboardList className="h-5 w-5" />
-              <span className="text-xs">Werkbonnen</span>
+            <Link to="/dashboard/agenda" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/agenda' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
+              <Calendar className="h-5 w-5" />
+              <span className="text-xs">Agenda</span>
             </Link>
-            <Link to="/dashboard/colleagues" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/colleagues' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
-              <Users className="h-5 w-5" />
-              <span className="text-xs">Collega's</span>
+            <Link to="/dashboard/contacts" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/contacts' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
+              <Phone className="h-5 w-5" />
+              <span className="text-xs">Contacten</span>
             </Link>
-            <button onClick={toggleSidebar} className="flex flex-col items-center justify-center space-y-1 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 transition-colors">
-              <Menu className="h-5 w-5" />
-              <span className="text-xs">Menu</span>
-            </button>
           </div>
         </div>
       </div>
