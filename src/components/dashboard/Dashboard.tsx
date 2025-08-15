@@ -1,325 +1,264 @@
-import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useNotifications } from '../../contexts/NotificationContext';
+// src/components/layout/MobileBottomBar.tsx
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { 
-  LayoutDashboard, 
-  Settings, 
+  Home, 
+  Plus, 
+  ClipboardList, 
+  Calendar as CalendarIcon,
+  MoreHorizontal,
   Users,
-  LogOut, 
-  Menu, 
-  X, 
-  Moon, 
-  Sun,
-  Bell,
-  ClipboardList,
-  Plus,
-  Home,
-  BookOpen,
-  Calendar,
-  Phone,
+  Contact,
+  FileText,
+  MessageSquare,
+  Settings,
+  X,
   BarChart3,
-  MessageSquare
+  CheckSquare
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import DashboardHome from '../../pages/DashboardHome';
-import Profile from '../dashboard/Profile';
-import SettingsPage from '../dashboard/Settings';
-import Werkbonnen from '../../pages/Werkbonnen';
-import Overview from '../dashboard/Overview';
-import Colleagues from '../../pages/Colleagues';
-import UserSettings from '../dashboard/UserSettings';
-import AdminPanel from '../dashboard/Settings';
-import NotificationCenter from './NotificationCenter';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 
-interface Notification {
-  id: number;
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
+interface MobileBottomBarProps {
+  className?: string;
 }
 
-const Dashboard = () => {
-  const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const { notifications, notificationCount, markAsRead } = useNotifications();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+const MobileBottomBar: React.FC<MobileBottomBarProps> = ({ className = "" }) => {
   const location = useLocation();
-  
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const { user } = useAuth();
+  const { notificationCount } = useNotifications();
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
-  const closeSidebar = () => {
-    setIsSidebarOpen(false);
-  };
-
-  const handleLogout = () => {
-    logout();
-  };
-
-  // Auto-close sidebar on route change (mobile)
-  useEffect(() => {
-    setIsSidebarOpen(false);
-  }, [location.pathname]);
-
-  const baseNavigation = [
-    { name: 'Home', href: '/dashboard', icon: Home },
-    { name: 'Werkbon aanmaken', href: '/dashboard/create', icon: Plus },
-    { name: 'Werkbonnen', href: '/dashboard/werkbonnen', icon: ClipboardList },
-    { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users }
+  // Primaire acties (altijd zichtbaar)
+  const primaryActions = [
+    { 
+      icon: Home, 
+      label: 'Home', 
+      path: '/dashboard'
+    },
+    { 
+      icon: Plus, 
+      label: 'Werkbon+', 
+      path: '/dashboard/create',
+      highlight: true // Speciale styling voor belangrijkste actie
+    },
+    { 
+      icon: ClipboardList, 
+      label: 'Taken', 
+      path: '/dashboard/werkbonnen'
+    },
+    { 
+      icon: CalendarIcon, 
+      label: 'Agenda', 
+      path: '/dashboard/calendar'
+    }
   ];
 
-  const adminNavigation = [
-    { name: 'Admin Panel', href: '/dashboard/admin', icon: Settings }
+  // Secundaire acties (in more menu)
+  const secondaryActions = [
+    { 
+      icon: Users, 
+      label: 'Collega\'s', 
+      path: '/dashboard/colleagues'
+    },
+    { 
+      icon: Contact, 
+      label: 'Contacten', 
+      path: '/dashboard/contacts'
+    },
+    { 
+      icon: FileText, 
+      label: 'Bronnen', 
+      path: '/dashboard/resources'
+    },
+    { 
+      icon: MessageSquare, 
+      label: 'Ideeën bus', 
+      path: '/dashboard/feedback'
+    },
+    { 
+      icon: BarChart3, 
+      label: 'Mijn Statistieken', 
+      path: '/dashboard/my-statistics'
+    },
+    { 
+      icon: CheckSquare, 
+      label: 'Mijn Taken', 
+      path: '/dashboard/tasks'
+    },
+    { 
+      icon: Settings, 
+      label: 'Instellingen', 
+      path: '/dashboard/settings'
+    }
   ];
 
-  const navigation = user?.role === 'admin' 
-    ? [...baseNavigation, ...adminNavigation]
-    : baseNavigation;
+  // Voeg admin panel toe voor admin users
+  if (user?.role === 'admin') {
+    secondaryActions.push({
+      icon: Settings,
+      label: 'Admin Panel',
+      path: '/dashboard/admin'
+    });
+  }
+
+  const isActiveLink = (path: string) => {
+    if (path === '/dashboard') {
+      return location.pathname === '/dashboard';
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  const handleMoreMenuToggle = () => {
+    setShowMoreMenu(!showMoreMenu);
+  };
+
+  const handleMenuItemClick = () => {
+    setShowMoreMenu(false);
+  };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-100 dark:bg-gray-900">
-      {/* Mobile sidebar backdrop */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 z-20 bg-gray-900 bg-opacity-50 transition-opacity lg:hidden" 
-          onClick={closeSidebar}
-        ></div>
+    <>
+      {/* More Menu Overlay */}
+      {showMoreMenu && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setShowMoreMenu(false)}
+            className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+            style={{ bottom: '80px' }}
+          />
+          
+          {/* Menu */}
+          <div className="lg:hidden fixed bottom-20 left-4 right-4 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl z-50 border border-gray-200 dark:border-gray-700">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Meer opties
+              </h3>
+              <button
+                onClick={() => setShowMoreMenu(false)}
+                className="p-1 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                aria-label="Sluit menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            {/* Secondary Actions */}
+            <div className="py-2 max-h-80 overflow-y-auto">
+              {secondaryActions.map(action => {
+                const Icon = action.icon;
+                return (
+                  <Link
+                    key={action.path}
+                    to={action.path}
+                    onClick={handleMenuItemClick}
+                    className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-lg mx-2"
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span className="text-sm font-medium">{action.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </>
       )}
 
-      {/* Sidebar */}
-      <aside 
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 shadow-lg transform ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 lg:static lg:inset-0 transition-transform duration-300 ease-in-out`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo & Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">IT</span>
-              </div>
-              <span className="text-gray-900 dark:text-white font-semibold">IT Knecht</span>
-            </div>
-            <button
-              onClick={closeSidebar}
-              className="lg:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            >
-              <X className="h-6 w-6" />
-            </button>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.href;
+      {/* Main Bottom Bar */}
+      <div className={`lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-30 backdrop-blur-sm bg-white/95 dark:bg-gray-800/95 ${className}`}>
+        {/* Safe area padding voor iOS */}
+        <div style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="grid grid-cols-5 h-16 px-2">
+            {/* Primaire acties */}
+            {primaryActions.map(action => {
+              const Icon = action.icon;
+              const isActive = isActiveLink(action.path);
               
               return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={closeSidebar}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-purple-600 text-white'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span>{item.name}</span>
-                </Link>
+                <div key={action.path} className="flex items-center justify-center">
+                  <Link 
+                    to={action.path}
+                    className={`flex flex-col items-center justify-center space-y-1 transition-all duration-200 relative w-full h-full ${
+                      isActive 
+                        ? 'text-purple-600 dark:text-purple-400' 
+                        : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'
+                    } ${action.highlight ? 'transform hover:scale-105' : ''}`}
+                  >
+                    {/* Highlight background voor belangrijkste actie */}
+                    {action.highlight && (
+                      <div className={`absolute -top-1 -left-1 w-12 h-12 rounded-full transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-purple-100 dark:bg-purple-900/30' 
+                          : 'bg-transparent hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                      }`} />
+                    )}
+                    
+                    {/* Icon container */}
+                    <div className={`relative p-2 rounded-xl transition-all duration-200 ${
+                      action.highlight 
+                        ? (isActive 
+                            ? 'bg-purple-600 text-white shadow-lg' 
+                            : 'bg-purple-500 text-white shadow-md hover:shadow-lg hover:bg-purple-600'
+                          )
+                        : ''
+                    }`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    
+                    {/* Label */}
+                    <span className={`text-xs font-medium transition-all duration-200 ${
+                      action.highlight && isActive ? 'text-purple-600 dark:text-purple-400' : ''
+                    }`}>
+                      {action.label}
+                    </span>
+                    
+                    {/* Active indicator voor normale acties */}
+                    {isActive && !action.highlight && (
+                      <div className="absolute -bottom-2 w-1 h-1 bg-purple-600 dark:bg-purple-400 rounded-full transition-all duration-200" />
+                    )}
+                  </Link>
+                </div>
               );
             })}
             
-            {/* Extra menu items from screenshot */}
-            <Link
-              to="/dashboard/agenda"
-              onClick={closeSidebar}
-              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                location.pathname === '/dashboard/agenda'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-            >
-              <Calendar className="h-5 w-5" />
-              <span>Agenda</span>
-            </Link>
-            
-            <Link
-              to="/dashboard/stats"
-              onClick={closeSidebar}
-              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                location.pathname === '/dashboard/stats'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-            >
-              <BarChart3 className="h-5 w-5" />
-              <span>Mijn Statistieken</span>
-            </Link>
-            
-            <Link
-              to="/dashboard/contacts"
-              onClick={closeSidebar}
-              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                location.pathname === '/dashboard/contacts'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-            >
-              <Phone className="h-5 w-5" />
-              <span>Contacten</span>
-            </Link>
-            
-            <Link
-              to="/dashboard/ideas"
-              onClick={closeSidebar}
-              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                location.pathname === '/dashboard/ideas'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-            >
-              <MessageSquare className="h-5 w-5" />
-              <span>Ideeën bus</span>
-            </Link>
-            
-            <Link
-              to="/dashboard/resources"
-              onClick={closeSidebar}
-              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                location.pathname === '/dashboard/resources'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-            >
-              <BookOpen className="h-5 w-5" />
-              <span>Bronnen</span>
-            </Link>
-          </nav>
-
-          {/* User Profile Section */}
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">
-                  {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-gray-900 dark:text-white font-medium truncate">
-                  {user?.displayName || 'Gebruiker'}
-                </p>
-                <p className="text-gray-500 dark:text-gray-400 text-sm truncate">
-                  {user?.email}
-                </p>
-                {user?.role === 'admin' && (
-                  <span className="inline-block bg-purple-600 text-white text-xs px-2 py-1 rounded mt-1">
-                    Admin
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Settings & Logout */}
-            <div className="space-y-2">
-              <Link
-                to="/dashboard/settings"
-                onClick={closeSidebar}
-                className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <Settings className="h-4 w-4" />
-                <span className="text-sm">Instellingen</span>
-              </Link>
+            {/* More button */}
+            <div className="flex items-center justify-center">
               <button
-                onClick={() => { handleLogout(); closeSidebar(); }}
-                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                onClick={handleMoreMenuToggle}
+                className={`flex flex-col items-center justify-center space-y-1 transition-all duration-200 relative w-full h-full ${
+                  showMoreMenu 
+                    ? 'text-purple-600 dark:text-purple-400' 
+                    : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'
+                }`}
+                aria-label="Meer opties"
               >
-                <LogOut className="h-4 w-4" />
-                <span className="text-sm">Uitloggen</span>
+                {/* Notificatie badge */}
+                {notificationCount > 0 && (
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-bold text-white">
+                      {notificationCount > 9 ? '9+' : notificationCount}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="p-2">
+                  <MoreHorizontal className="h-5 w-5" />
+                </div>
+                <span className="text-xs font-medium">Meer</span>
+                
+                {/* Active indicator voor more menu */}
+                {showMoreMenu && (
+                  <div className="absolute -bottom-2 w-1 h-1 bg-purple-600 dark:bg-purple-400 rounded-full transition-all duration-200" />
+                )}
               </button>
             </div>
           </div>
         </div>
-      </aside>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top header */}
-        <header className="bg-white dark:bg-gray-800 shadow-sm z-10">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="h-16 flex items-center justify-between">
-              <div className="flex items-center">
-                {/* Mobile menu button */}
-                <button
-                  className="lg:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
-                  onClick={toggleSidebar}
-                  aria-label="Open menu"
-                  aria-label="Toggle menu"
-                >
-                  <Menu className="h-6 w-6" />
-                </button>
-                <div className="ml-4 lg:ml-0">
-                  <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    {navigation.find(item => item.href === location.pathname)?.name || 'Dashboard'}
-                  </h1>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                {/* Notifications */}
-                <NotificationCenter />
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Content area */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
-          <Routes>
-            <Route path="/" element={<DashboardHome />} />
-            <Route path="/create" element={<Overview />} />
-            <Route path="/colleagues" element={<Colleagues />} />
-            <Route path="/werkbonnen" element={<Werkbonnen />} />
-            <Route path="/settings" element={<UserSettings />} />
-            <Route path="/admin" element={<AdminPanel />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </main>
-
-        {/* Mobile Bottom Action Bar */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-10">
-          <div className="grid grid-cols-5 h-16">
-            <Link to="/dashboard" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
-              <Home className="h-5 w-5" />
-              <span className="text-xs">Home</span>
-            </Link>
-            <Link to="/dashboard/resources" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/resources' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
-              <BookOpen className="h-5 w-5" />
-              <span className="text-xs">Bronnen</span>
-            </Link>
-            <Link to="/dashboard/create" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/create' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
-              <Plus className="h-5 w-5" />
-              <span className="text-xs">Werkbon+</span>
-            </Link>
-            <Link to="/dashboard/agenda" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/agenda' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
-              <Calendar className="h-5 w-5" />
-              <span className="text-xs">Agenda</span>
-            </Link>
-            <Link to="/dashboard/contacts" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/contacts' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
-              <Phone className="h-5 w-5" />
-              <span className="text-xs">Contacten</span>
-            </Link>
-          </div>
-        </div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default Dashboard;
+export default MobileBottomBar;
