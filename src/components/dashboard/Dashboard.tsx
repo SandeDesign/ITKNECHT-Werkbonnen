@@ -47,9 +47,18 @@ const Dashboard = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
   const handleLogout = () => {
     logout();
   };
+
+  // Auto-close sidebar on route change (mobile)
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
 
   const baseNavigation = [
     { name: 'Home', href: '/dashboard', icon: Home },
@@ -72,7 +81,7 @@ const Dashboard = () => {
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 z-20 bg-gray-900 bg-opacity-50 transition-opacity lg:hidden" 
-          onClick={toggleSidebar}
+          onClick={closeSidebar}
         ></div>
       )}
 
@@ -117,7 +126,7 @@ const Dashboard = () => {
         </header>
 
         {/* Content area */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
           <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="/create" element={<Overview />} />
@@ -128,6 +137,32 @@ const Dashboard = () => {
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
+
+        {/* Mobile Bottom Action Bar */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-10">
+          <div className="grid grid-cols-5 h-16">
+            <Link to="/dashboard" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
+              <Home className="h-5 w-5" />
+              <span className="text-xs">Home</span>
+            </Link>
+            <Link to="/dashboard/create" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/create' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
+              <Plus className="h-5 w-5" />
+              <span className="text-xs">Werkbon</span>
+            </Link>
+            <Link to="/dashboard/werkbonnen" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/werkbonnen' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
+              <ClipboardList className="h-5 w-5" />
+              <span className="text-xs">Werkbonnen</span>
+            </Link>
+            <Link to="/dashboard/colleagues" className={`flex flex-col items-center justify-center space-y-1 transition-colors ${location.pathname === '/dashboard/colleagues' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'}`}>
+              <Users className="h-5 w-5" />
+              <span className="text-xs">Collega's</span>
+            </Link>
+            <button onClick={toggleSidebar} className="flex flex-col items-center justify-center space-y-1 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 transition-colors">
+              <Menu className="h-5 w-5" />
+              <span className="text-xs">Menu</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
