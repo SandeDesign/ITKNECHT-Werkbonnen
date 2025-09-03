@@ -445,8 +445,8 @@ const Dashboard = () => {
           </>
         )}
 
-        {/* WOW Bottom Navigation Bar */}
-        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-2xl">
+        {/* Ultra Modern Bottom Navigation Bar */}
+        <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 shadow-xl">
           <div style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <div className="flex items-center justify-around h-16 px-2">
               {mobileMainNav.map((item) => {
@@ -458,7 +458,7 @@ const Dashboard = () => {
                     {item.action === 'menu' ? (
                       <button
                         onClick={() => setShowMobileMenu(!showMobileMenu)}
-                        className={`flex flex-col items-center space-y-1 p-2 transition-all duration-200 ${
+                        className={`flex flex-col items-center justify-center space-y-1 p-2 transition-all duration-200 relative ${
                           showMobileMenu 
                             ? 'text-purple-600 dark:text-purple-400' 
                             : 'text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
@@ -466,17 +466,17 @@ const Dashboard = () => {
                       >
                         {/* Notification badge */}
                         {notificationCount > 0 && (
-                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
                             <span className="text-xs font-bold text-white">
                               {notificationCount > 9 ? '9+' : notificationCount}
                             </span>
                           </div>
                         )}
                         
-                        <div className={`p-2 rounded-xl ${
+                        <div className={`p-2.5 rounded-lg transition-all duration-200 ${
                           showMobileMenu 
-                            ? 'bg-purple-100 dark:bg-purple-900/30' 
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                            ? 'bg-purple-500/10 shadow-sm' 
+                            : 'hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
                         }`}>
                           <Icon className="h-5 w-5" />
                         </div>
@@ -485,8 +485,46 @@ const Dashboard = () => {
                     ) : (
                       <Link
                         to={item.href}
-                        className={`flex flex-col items-center space-y-1 p-2 transition-all duration-200 ${
+                        className={`flex flex-col items-center justify-center space-y-1 p-2 transition-all duration-200 relative ${
                           item.highlight
+                            ? 'text-white'
+                            : (isActive 
+                                ? 'text-purple-600 dark:text-purple-400' 
+                                : 'text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
+                              )
+                        }`}
+                      >
+                        {/* Special styling for highlight button */}
+                        {item.highlight ? (
+                          <div className={`relative ${
+                            isActive 
+                              ? 'bg-purple-600 shadow-lg' 
+                              : 'bg-purple-500 hover:bg-purple-600 shadow-md hover:shadow-lg'
+                          } p-3 rounded-xl transition-all duration-200`}>
+                            <Icon className="h-6 w-6" />
+                          </div>
+                        ) : (
+                          <div className={`p-2.5 rounded-lg transition-all duration-200 relative ${
+                            isActive 
+                              ? 'bg-purple-500/10 shadow-sm' 
+                              : 'hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
+                          }`}>
+                            <Icon className="h-5 w-5" />
+                            {isActive && (
+                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full" />
+                            )}
+                          </div>
+                        )}
+                        
+                        <span className="text-xs font-medium">{item.name}</span>
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>highlight
                             ? (isActive 
                                 ? 'text-white' 
                                 : 'text-white hover:text-white'
