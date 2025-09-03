@@ -19,9 +19,10 @@ import {
   Contact,
   MessageSquare,
   CheckSquare,
-  Sparkles,
   User,
-  Crown
+  Crown,
+  MoreHorizontal,
+  ChevronUp
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import DashboardHome from './DashboardHome';
@@ -54,6 +55,7 @@ const Dashboard = () => {
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [showAdminSubMenu, setShowAdminSubMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const location = useLocation();
 
   const baseNavigation = [
@@ -74,6 +76,25 @@ const Dashboard = () => {
 
   const navigation = [...baseNavigation, ...(user?.role === 'admin' ? adminNavigation : [])];
 
+  // Mobile navigation - 4 hoofditems
+  const mobileMainNav = [
+    { name: 'Home', href: '/dashboard', icon: Home },
+    { name: 'Nieuwe Werkbon', href: '/dashboard/create', icon: Plus, highlight: true },
+    { name: 'Agenda', href: '/dashboard/calendar', icon: CalendarIcon },
+    { name: 'Meer', action: 'menu', icon: MoreHorizontal }
+  ];
+
+  // Overige items voor mobile menu
+  const mobileMenuItems = [
+    { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3 },
+    { name: 'Mijn Taken', href: '/dashboard/tasks', icon: CheckSquare },
+    { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users },
+    { name: 'Contacten', href: '/dashboard/contacts', icon: Contact },
+    { name: 'Ideeën bus', href: '/dashboard/feedback', icon: MessageSquare },
+    { name: 'Bronnen', href: '/dashboard/resources', icon: FileText },
+    ...(user?.role === 'admin' ? [{ name: 'Admin Panel', href: '/dashboard/admin', icon: Settings }] : [])
+  ];
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -92,61 +113,67 @@ const Dashboard = () => {
     setShowWebmailModal(false);
   };
 
+  const isActiveLink = (path: string) => {
+    if (path === '/dashboard') {
+      return location.pathname === '/dashboard';
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-100 dark:bg-gray-900">
+    <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Mobile sidebar backdrop */}
       <div 
-        className={`fixed inset-0 z-20 bg-black/40 backdrop-blur-sm transition-all duration-300 lg:hidden ${
+        className={`fixed inset-0 z-20 bg-black/50 backdrop-blur-sm transition-all duration-300 lg:hidden ${
           isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={toggleSidebar}
       />
 
-      {/* ULTRA MODERN SIDEBAR */}
+      {/* PROFESSIONAL DESKTOP SIDEBAR */}
       <aside 
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl shadow-2xl border-r border-gray-200/50 dark:border-gray-700/50 transform transition-all duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-30 w-72 bg-white dark:bg-gray-800 shadow-xl border-r border-gray-200 dark:border-gray-700 transform transition-all duration-300 ease-in-out ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 lg:static lg:inset-0`} 
         data-tutorial="sidebar"
       >
-        <div className="h-full flex flex-col relative">
+        <div className="h-full flex flex-col">
           
-          {/* ULTRA MODERN HEADER */}
-          <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl z-10">
-            <div className="flex items-center space-x-3">
-              {/* MODERN LOGO CONTAINER */}
-              <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl blur-md opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative p-2 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-lg">
-                  <img 
-                    src="https://itknecht.nl/wp-content/uploads/2025/01/cropped-cropped-file-1-1-e1736278706265.webp"
-                    alt="IT Knecht Logo"
-                    className="h-6 w-6 rounded-lg"
-                  />
-                </div>
+          {/* CLEAN PROFESSIONAL HEADER */}
+          <div className="h-20 flex items-center justify-between px-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div className="flex items-center space-x-4">
+              {/* CLEAN IT KNECHT LOGO */}
+              <div className="w-12 h-12 bg-white rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 p-2">
+                <img 
+                  src="https://itknecht.nl/wp-content/uploads/2025/01/cropped-cropped-file-1-1-e1736278706265.webp"
+                  alt="IT Knecht Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
               
               <div>
-                <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                   IT Knecht
-                </span>
-                <p className="text-xs text-gray-500 dark:text-gray-400 -mt-0.5">Werkbon Systeem</p>
+                </h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Werkbon Systeem
+                </p>
               </div>
             </div>
             
-            {/* MODERN CLOSE BUTTON */}
+            {/* CLEAN CLOSE BUTTON */}
             <button
-              className="lg:hidden p-2.5 rounded-xl bg-gray-100/80 dark:bg-gray-800/80 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all duration-200 hover:scale-105 backdrop-blur-sm"
+              className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               onClick={toggleSidebar}
             >
-              <X className="h-5 w-5" />
+              <X className="h-6 w-6" />
             </button>
           </div>
 
-          {/* ULTRA MODERN NAVIGATION */}
-          <nav className="flex-1 pt-6 pb-4 px-3 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+          {/* PROFESSIONAL NAVIGATION */}
+          <nav className="flex-1 pt-8 pb-4 px-4 overflow-y-auto">
             <div className="space-y-2">
-              {navigation.filter(item => item.showInNav).map((item, index) => {
+              {navigation.filter(item => item.showInNav).map((item) => {
                 const isActive = location.pathname === item.href;
                 const LinkComponent = item.external ? 'a' : Link;
                 const linkProps = item.external ? { 
@@ -164,75 +191,52 @@ const Dashboard = () => {
                   }
                 };
                 
-                // SPECIAL HIGHLIGHT voor "Werkbon aanmaken"
+                // Special styling for Create button
                 const isCreateButton = item.name === 'Werkbon aanmaken';
                 
                 return (
                   <LinkComponent
                     key={item.name}
                     {...linkProps}
-                    className={`group relative flex items-center px-4 py-3.5 rounded-2xl font-medium transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${
+                    className={`group flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
                       isCreateButton
                         ? (isActive 
-                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-xl shadow-purple-500/30' 
-                            : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl shadow-purple-500/25'
+                            ? 'bg-purple-600 text-white shadow-lg' 
+                            : 'bg-purple-500 hover:bg-purple-600 text-white shadow-md hover:shadow-lg'
                           )
                         : (isActive 
-                            ? 'bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/30 dark:to-blue-900/30 text-purple-700 dark:text-purple-300 shadow-md border border-purple-200/50 dark:border-purple-800/50' 
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-purple-600 dark:hover:text-purple-400'
+                            ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800' 
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400'
                           )
                     }`}
-                    style={{
-                      animationDelay: `${index * 50}ms`,
-                      animation: 'slideInLeft 0.5s ease-out forwards'
-                    }}
                   >
-                    {/* ICON CONTAINER - ULTRA MODERN */}
-                    <div className={`relative p-2.5 rounded-xl mr-3 transition-all duration-200 ${
+                    {/* Icon */}
+                    <div className={`p-2 rounded-lg mr-4 ${
                       isCreateButton
-                        ? 'bg-white/20 text-white backdrop-blur-sm'
+                        ? 'bg-white/20'
                         : (isActive 
-                            ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 shadow-lg' 
-                            : 'bg-gray-100 dark:bg-gray-800 group-hover:bg-purple-50 dark:group-hover:bg-purple-900/30 group-hover:text-purple-600 dark:group-hover:text-purple-400 shadow-sm'
+                            ? 'bg-purple-100 dark:bg-purple-800/50' 
+                            : 'bg-gray-100 dark:bg-gray-700 group-hover:bg-purple-50 dark:group-hover:bg-purple-900/30'
                           )
                     }`}>
                       <item.icon className="h-5 w-5" />
-                      
-                      {/* ACTIVE PULSE INDICATOR */}
-                      {isActive && !isCreateButton && (
-                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-600 dark:bg-purple-400 rounded-full">
-                          <div className="absolute inset-0 bg-purple-600 dark:bg-purple-400 rounded-full animate-ping opacity-75" />
-                        </div>
-                      )}
-                      
-                      {/* SPARKLE EFFECT voor create button */}
-                      {isCreateButton && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <Sparkles className="h-2 w-2 text-white" />
-                        </div>
-                      )}
                     </div>
                     
-                    {/* LABEL */}
-                    <span className="text-sm font-medium">{item.name}</span>
+                    {/* Label */}
+                    <span className="font-medium">{item.name}</span>
                     
-                    {/* SPECIAL GLOW EFFECT voor create button */}
-                    {isCreateButton && (
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/20 to-blue-600/20 blur-sm -z-10" />
+                    {/* Active indicator */}
+                    {isActive && !isCreateButton && (
+                      <div className="ml-auto w-2 h-2 bg-purple-500 rounded-full" />
                     )}
-                    
-                    {/* HOVER GRADIENT OVERLAY */}
-                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-600/0 to-blue-600/0 group-hover:from-purple-600/5 group-hover:to-blue-600/5 transition-all duration-300" />
                   </LinkComponent>
                 );
               })}
             </div>
           </nav>
 
-          {/* ULTRA MODERN USER SECTION */}
-          <div className="relative border-t border-gray-200/50 dark:border-gray-700/50 p-4 bg-gradient-to-r from-gray-50/50 to-blue-50/50 dark:from-gray-800/50 dark:to-blue-900/50">
-            
-            {/* USER PROFILE CARD */}
+          {/* PROFESSIONAL USER SECTION */}
+          <div className="border-t border-gray-200 dark:border-gray-700 p-4">
             <div 
               className="relative group"
               onMouseEnter={() => setShowUserMenu(true)}
@@ -240,86 +244,78 @@ const Dashboard = () => {
             >
               <Link 
                 to="/dashboard/settings" 
-                className="flex items-center p-4 rounded-2xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm shadow-lg hover:shadow-xl border border-gray-200/50 dark:border-gray-700/50 transition-all duration-300 hover:scale-[1.02]"
+                className="flex items-center p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-200 dark:border-gray-600"
               >
-                {/* MODERN AVATAR */}
+                {/* Clean Avatar */}
                 <div className="relative">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg overflow-hidden">
+                  <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md overflow-hidden">
                     {user?.avatar ? (
-                      <img src={user.avatar} alt={user.name} className="w-full h-full object-cover rounded-xl" />
+                      <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                     ) : (
                       <span className="text-lg">{user?.name?.charAt(0).toUpperCase() || 'U'}</span>
                     )}
                   </div>
                   
-                  {/* ONLINE STATUS INDICATOR */}
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full">
-                    <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-75" />
-                  </div>
+                  {/* Online indicator */}
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
                 </div>
                 
                 <div className="ml-4 flex-1 min-w-0">
                   <div className="flex items-center space-x-2">
-                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                    <p className="font-semibold text-gray-900 dark:text-white truncate">
                       {user?.name || 'User'}
                     </p>
                     
-                    {/* ADMIN CROWN BADGE */}
+                    {/* Clean admin badge */}
                     {user?.role === 'admin' && (
-                      <div className="flex items-center space-x-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-2 py-0.5 rounded-lg text-xs font-bold shadow-md">
+                      <div className="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-md text-xs font-medium flex items-center space-x-1">
                         <Crown className="h-3 w-3" />
                         <span>Admin</span>
                       </div>
                     )}
                   </div>
                   
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                     {user?.email || 'user@example.com'}
                   </p>
                 </div>
                 
-                {/* SETTINGS ICON */}
-                <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-purple-50 dark:group-hover:bg-purple-900/20 transition-colors duration-200">
-                  <User className="h-4 w-4 text-gray-500 group-hover:text-purple-600 dark:text-gray-400 dark:group-hover:text-purple-400" />
-                </div>
+                <User className="h-5 w-5 text-gray-400" />
               </Link>
               
-              {/* FLOATING USER MENU */}
+              {/* Clean user menu */}
               {showUserMenu && (
-                <div className="absolute bottom-full mb-2 left-4 right-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden z-50">
-                  {/* Quick Actions */}
-                  <div className="p-3 space-y-2">
+                <div className="absolute bottom-full mb-2 left-4 right-4 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+                  <div className="py-2">
                     <Link
                       to="/dashboard/settings"
-                      className="flex items-center space-x-3 p-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-600 dark:hover:text-purple-400 transition-all duration-200"
+                      className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                       onClick={() => setShowUserMenu(false)}
                     >
                       <Settings className="h-4 w-4" />
-                      <span className="text-sm font-medium">Instellingen</span>
+                      <span>Instellingen</span>
                     </Link>
                     
-                    {/* ADMIN PANEL SHORTCUT */}
                     {user?.role === 'admin' && (
                       <Link
                         to="/dashboard/admin"
-                        className="flex items-center space-x-3 p-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-yellow-50 hover:to-orange-50 dark:hover:from-yellow-900/20 dark:hover:to-orange-900/20 hover:text-yellow-700 dark:hover:text-yellow-400 transition-all duration-200"
+                        className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                         onClick={() => setShowUserMenu(false)}
                       >
                         <Crown className="h-4 w-4" />
-                        <span className="text-sm font-medium">Admin Panel</span>
+                        <span>Admin Panel</span>
                       </Link>
                     )}
                     
-                    {/* LOGOUT BUTTON */}
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
                         handleLogout();
                       }}
-                      className="w-full flex items-center space-x-3 p-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                     >
                       <LogOut className="h-4 w-4" />
-                      <span className="text-sm font-medium">Uitloggen</span>
+                      <span>Uitloggen</span>
                     </button>
                   </div>
                 </div>
@@ -329,51 +325,43 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      {/* Main content - BEHOUD ORIGINEEL */}
+      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden min-h-screen">
-        {/* ULTRA MODERN TOP HEADER */}
-        <header className="sticky top-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl shadow-lg border-b border-gray-200/50 dark:border-gray-700/50 z-10">
-          <div className="spacing-x">
+        {/* CLEAN TOP HEADER */}
+        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 z-10">
+          <div className="px-4 lg:px-6">
             <div className="h-16 flex items-center justify-between">
               <div className="flex items-center">
-                {/* MODERN MOBILE MENU BUTTON */}
+                {/* Mobile menu button */}
                 <button
-                  className="lg:hidden p-2.5 rounded-xl bg-gray-100/80 hover:bg-gray-200 dark:bg-gray-800/80 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mr-3 transition-all duration-200 hover:scale-105 backdrop-blur-sm"
+                  className="lg:hidden p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 mr-3 transition-colors"
                   onClick={toggleSidebar}
                 >
-                  <div 
-                    className="relative"
-                    onMouseEnter={() => setShowAdminSubMenu(true)}
-                    onMouseLeave={() => setShowAdminSubMenu(false)}
-                  >
-                    <Menu className="h-6 w-6" />
-                  </div>
+                  <Menu className="h-6 w-6" />
                 </button>
                 
-                {/* MODERN PAGE TITLE */}
-                <div className="ml-2 lg:ml-0">
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                    {location.pathname.startsWith('/dashboard/admin') ? '⚡ Admin Panel' : 
-                     location.pathname === '/dashboard/settings' ? '⚙️ Instellingen' : '🏠 Dashboard'}
+                {/* Page title */}
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                    {location.pathname.startsWith('/dashboard/admin') ? 'Admin Panel' : 
+                     location.pathname === '/dashboard/settings' ? 'Instellingen' : 
+                     location.pathname === '/dashboard/create' ? 'Nieuwe Werkbon' :
+                     location.pathname === '/dashboard/calendar' ? 'Planning' :
+                     location.pathname === '/dashboard/my-statistics' ? 'Statistieken' :
+                     'Dashboard'}
                   </h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 -mt-0.5">
-                    {location.pathname.startsWith('/dashboard/admin') ? 'Systeembeheer' : 
-                     location.pathname === '/dashboard/settings' ? 'Persoonlijke voorkeuren' : 'Welkom terug!'}
-                  </p>
                 </div>
               </div>
               
               <div className="flex items-center space-x-4">
-                <div className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 backdrop-blur-sm">
-                  <NotificationCenter />
-                </div>
+                <NotificationCenter />
               </div>
             </div>
           </div>
         </header>
 
-        {/* Content area - BEHOUD ORIGINEEL */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 spacing">
+        {/* Content area */}
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 spacing pb-20 lg:pb-0">
           <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="/create" element={<Overview />} />
@@ -395,8 +383,154 @@ const Dashboard = () => {
           </Routes>
         </main>
       </div>
+
+      {/* MOBILE BOTTOM NAVIGATION - WOW EFFECT */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+        {/* Mobile menu overlay */}
+        {showMobileMenu && (
+          <>
+            <div
+              onClick={() => setShowMobileMenu(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+              style={{ bottom: '80px' }}
+            />
+            
+            {/* WOW Mobile Menu */}
+            <div className="fixed bottom-20 left-2 right-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden transform transition-all duration-300 origin-bottom">
+              {/* Menu header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20">
+                <h3 className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                  Menu
+                </h3>
+                <button
+                  onClick={() => setShowMobileMenu(false)}
+                  className="p-2 rounded-full bg-white dark:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 shadow-md transition-colors"
+                >
+                  <ChevronUp className="h-5 w-5" />
+                </button>
+              </div>
+              
+              {/* Menu items */}
+              <div className="py-3 max-h-80 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-2 px-3">
+                  {mobileMenuItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = isActiveLink(item.href);
+                    
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        onClick={() => setShowMobileMenu(false)}
+                        className={`flex flex-col items-center space-y-2 p-4 rounded-xl transition-all duration-200 ${
+                          isActive 
+                            ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800' 
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        <div className={`p-3 rounded-xl ${
+                          isActive 
+                            ? 'bg-purple-100 dark:bg-purple-800/50' 
+                            : 'bg-gray-100 dark:bg-gray-600'
+                        }`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <span className="text-xs font-medium text-center">{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* WOW Bottom Navigation Bar */}
+        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-2xl">
+          <div style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+            <div className="flex items-center justify-around h-16 px-2">
+              {mobileMainNav.map((item) => {
+                const Icon = item.icon;
+                const isActive = item.action !== 'menu' && isActiveLink(item.href);
+                
+                return (
+                  <div key={item.name} className="flex-1 flex justify-center">
+                    {item.action === 'menu' ? (
+                      <button
+                        onClick={() => setShowMobileMenu(!showMobileMenu)}
+                        className={`flex flex-col items-center space-y-1 p-2 transition-all duration-200 ${
+                          showMobileMenu 
+                            ? 'text-purple-600 dark:text-purple-400' 
+                            : 'text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
+                        }`}
+                      >
+                        {/* Notification badge */}
+                        {notificationCount > 0 && (
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                            <span className="text-xs font-bold text-white">
+                              {notificationCount > 9 ? '9+' : notificationCount}
+                            </span>
+                          </div>
+                        )}
+                        
+                        <div className={`p-2 rounded-xl ${
+                          showMobileMenu 
+                            ? 'bg-purple-100 dark:bg-purple-900/30' 
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <span className="text-xs font-medium">{item.name}</span>
+                      </button>
+                    ) : (
+                      <Link
+                        to={item.href}
+                        className={`flex flex-col items-center space-y-1 p-2 transition-all duration-200 ${
+                          item.highlight
+                            ? (isActive 
+                                ? 'text-white' 
+                                : 'text-white hover:text-white'
+                              )
+                            : (isActive 
+                                ? 'text-purple-600 dark:text-purple-400' 
+                                : 'text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
+                              )
+                        }`}
+                      >
+                        {/* Special styling for highlight button */}
+                        {item.highlight ? (
+                          <div className={`relative ${
+                            isActive 
+                              ? 'bg-purple-600 shadow-lg shadow-purple-500/30' 
+                              : 'bg-purple-500 hover:bg-purple-600 shadow-md hover:shadow-lg shadow-purple-500/20'
+                          } p-3 rounded-xl transition-all duration-200`}>
+                            <Icon className="h-6 w-6" />
+                          </div>
+                        ) : (
+                          <div className={`p-2 rounded-xl transition-all duration-200 ${
+                            isActive 
+                              ? 'bg-purple-100 dark:bg-purple-900/30' 
+                              : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                          }`}>
+                            <Icon className="h-5 w-5" />
+                            {isActive && (
+                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full" />
+                            )}
+                          </div>
+                        )}
+                        
+                        <span className="text-xs font-medium">{item.name}</span>
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
       
-      {/* BEHOUD ORIGINELE COMPONENTS */}
+      {/* Original components */}
       <TutorialOverlay 
         isActive={isTutorialActive}
         onClose={() => setIsTutorialActive(false)}
@@ -406,33 +540,6 @@ const Dashboard = () => {
         onClose={() => setShowWebmailModal(false)}
         onConfirm={handleWebmailConfirm}
       />
-
-      {/* CSS ANIMATIONS */}
-      <style jsx>{`
-        @keyframes slideInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        
-        .scrollbar-thin {
-          scrollbar-width: thin;
-        }
-        
-        .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
-          background-color: #d1d5db;
-          border-radius: 0.5rem;
-        }
-        
-        .dark .scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
-          background-color: #4b5563;
-        }
-      `}</style>
     </div>
   );
 };
