@@ -1,264 +1,330 @@
-// src/components/layout/MobileBottomBar.tsx
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
-  Home, 
-  Plus, 
-  ClipboardList, 
-  Calendar as CalendarIcon,
-  MoreHorizontal,
-  Users,
-  Contact,
-  FileText,
-  MessageSquare,
-  Settings,
-  X,
-  BarChart3,
-  CheckSquare
+// src/components/layout/TopBar.tsx
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import {
+  Search,
+  Bell,
+  Sun,
+  Moon,
+  Maximize2,
+  Minimize2,
+  RefreshCw,
+  Wifi,
+  WifiOff,
+  Zap
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 
-interface MobileBottomBarProps {
+interface TopBarProps {
   className?: string;
 }
 
-const MobileBottomBar: React.FC<MobileBottomBarProps> = ({ className = "" }) => {
+const TopBar: React.FC<TopBarProps> = ({ className = "" }) => {
   const location = useLocation();
   const { user } = useAuth();
-  const { notificationCount } = useNotifications();
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const { notificationCount, notifications } = useNotifications();
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Primaire acties (altijd zichtbaar)
-  const primaryActions = [
-    { 
-      icon: Home, 
-      label: 'Home', 
-      path: '/dashboard'
-    },
-    { 
-      icon: Plus, 
-      label: 'Werkbon+', 
-      path: '/dashboard/create',
-      highlight: true // Speciale styling voor belangrijkste actie
-    },
-    { 
-      icon: ClipboardList, 
-      label: 'Taken', 
-      path: '/dashboard/werkbonnen'
-    },
-    { 
-      icon: CalendarIcon, 
-      label: 'Agenda', 
-      path: '/dashboard/calendar'
+  // Page titles mapping
+  const pageTitles: Record<string, { title: string; subtitle?: string }> = {
+    '/dashboard': { title: 'Dashboard', subtitle: 'Welkom terug!' },
+    '/dashboard/create': { title: 'Nieuwe Werkbon', subtitle: 'Maak een nieuwe werkbon aan' },
+    '/dashboard/werkbonnen': { title: 'Mijn Werkbonnen', subtitle: 'Overzicht van je werkbonnen' },
+    '/dashboard/calendar': { title: 'Planning', subtitle: 'Je agenda en afspraken' },
+    '/dashboard/tasks': { title: 'Mijn Taken', subtitle: 'Openstaande taken' },
+    '/dashboard/colleagues': { title: 'Collega\'s', subtitle: 'Team overzicht' },
+    '/dashboard/contacts': { title: 'Contacten', subtitle: 'Klanten en leveranciers' },
+    '/dashboard/resources': { title: 'Bronnen & Tools', subtitle: 'Documentatie en hulpmiddelen' },
+    '/dashboard/feedback': { title: 'Ideeën Bus', subtitle: 'Deel je suggesties' },
+    '/dashboard/my-statistics': { title: 'Mijn Statistieken', subtitle: 'Je prestaties in cijfers' },
+    '/dashboard/settings': { title: 'Instellingen', subtitle: 'App voorkeuren' },
+    '/dashboard/admin': { title: 'Admin Panel', subtitle: 'Systeembeheer' }
+  };
+
+  const currentPage = pageTitles[location.pathname] || { title: 'IT Knecht', subtitle: 'Werkbon Systeem' };
+
+  // Effect voor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Effect voor tijd
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Effect voor fullscreen
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (isFullscreen) {
+      document.exitFullscreen();
+    } else {
+      document.documentElement.requestFullscreen();
     }
-  ];
+  };
 
-  // Secundaire acties (in more menu)
-  const secondaryActions = [
-    { 
-      icon: Users, 
-      label: 'Collega\'s', 
-      path: '/dashboard/colleagues'
-    },
-    { 
-      icon: Contact, 
-      label: 'Contacten', 
-      path: '/dashboard/contacts'
-    },
-    { 
-      icon: FileText, 
-      label: 'Bronnen', 
-      path: '/dashboard/resources'
-    },
-    { 
-      icon: MessageSquare, 
-      label: 'Ideeën bus', 
-      path: '/dashboard/feedback'
-    },
-    { 
-      icon: BarChart3, 
-      label: 'Mijn Statistieken', 
-      path: '/dashboard/my-statistics'
-    },
-    { 
-      icon: CheckSquare, 
-      label: 'Mijn Taken', 
-      path: '/dashboard/tasks'
-    },
-    { 
-      icon: Settings, 
-      label: 'Instellingen', 
-      path: '/dashboard/settings'
-    }
-  ];
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    document.documentElement.classList.toggle('dark');
+  };
 
-  // Voeg admin panel toe voor admin users
-  if (user?.role === 'admin') {
-    secondaryActions.push({
-      icon: Settings,
-      label: 'Admin Panel',
-      path: '/dashboard/admin'
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('nl-NL', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
     });
-  }
-
-  const isActiveLink = (path: string) => {
-    if (path === '/dashboard') {
-      return location.pathname === '/dashboard';
-    }
-    return location.pathname.startsWith(path);
   };
 
-  const handleMoreMenuToggle = () => {
-    setShowMoreMenu(!showMoreMenu);
-  };
-
-  const handleMenuItemClick = () => {
-    setShowMoreMenu(false);
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('nl-NL', { 
+      weekday: 'short',
+      day: 'numeric', 
+      month: 'short' 
+    });
   };
 
   return (
-    <>
-      {/* More Menu Overlay */}
-      {showMoreMenu && (
-        <>
-          {/* Backdrop */}
-          <div
-            onClick={() => setShowMoreMenu(false)}
-            className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-            style={{ bottom: '80px' }}
+    <div className={`hidden lg:flex items-center justify-between h-16 px-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 ${className}`}>
+      
+      {/* Left Section - Page Info */}
+      <div className="flex items-center space-x-6">
+        <div>
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {currentPage.title}
+          </h1>
+          {currentPage.subtitle && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 -mt-0.5">
+              {currentPage.subtitle}
+            </p>
+          )}
+        </div>
+        
+        {/* Breadcrumb indicator */}
+        <div className="hidden xl:flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+          <span>IT Knecht</span>
+          <span>/</span>
+          <span className="text-purple-600 dark:text-purple-400 font-medium">
+            {currentPage.title}
+          </span>
+        </div>
+      </div>
+
+      {/* Center Section - Search */}
+      <div className="flex-1 max-w-md mx-8">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Zoek werkbonnen, contacten, taken..."
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 placeholder-gray-400 dark:placeholder-gray-500 text-sm"
           />
           
-          {/* Menu */}
-          <div className="lg:hidden fixed bottom-20 left-4 right-4 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl z-50 border border-gray-200 dark:border-gray-700">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Meer opties
-              </h3>
-              <button
-                onClick={() => setShowMoreMenu(false)}
-                className="p-1 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                aria-label="Sluit menu"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          {/* Search results preview */}
+          {searchQuery && (
+            <div className="absolute top-full mt-2 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 z-50 max-h-80 overflow-y-auto">
+              <div className="p-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                  Zoeken naar "{searchQuery}"...
+                </p>
+                {/* Here you would implement actual search results */}
+              </div>
             </div>
-            
-            {/* Secondary Actions */}
-            <div className="py-2 max-h-80 overflow-y-auto">
-              {secondaryActions.map(action => {
-                const Icon = action.icon;
-                return (
-                  <Link
-                    key={action.path}
-                    to={action.path}
-                    onClick={handleMenuItemClick}
-                    className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors rounded-lg mx-2"
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span className="text-sm font-medium">{action.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
+          )}
+        </div>
+      </div>
 
-      {/* Main Bottom Bar */}
-      <div className={`lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-30 backdrop-blur-sm bg-white/95 dark:bg-gray-800/95 ${className}`}>
-        {/* Safe area padding voor iOS */}
-        <div style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          <div className="grid grid-cols-5 h-16 px-2">
-            {/* Primaire acties */}
-            {primaryActions.map(action => {
-              const Icon = action.icon;
-              const isActive = isActiveLink(action.path);
-              
-              return (
-                <div key={action.path} className="flex items-center justify-center">
-                  <Link 
-                    to={action.path}
-                    className={`flex flex-col items-center justify-center space-y-1 transition-all duration-200 relative w-full h-full ${
-                      isActive 
-                        ? 'text-purple-600 dark:text-purple-400' 
-                        : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'
-                    } ${action.highlight ? 'transform hover:scale-105' : ''}`}
-                  >
-                    {/* Highlight background voor belangrijkste actie */}
-                    {action.highlight && (
-                      <div className={`absolute -top-1 -left-1 w-12 h-12 rounded-full transition-all duration-200 ${
-                        isActive 
-                          ? 'bg-purple-100 dark:bg-purple-900/30' 
-                          : 'bg-transparent hover:bg-purple-50 dark:hover:bg-purple-900/20'
-                      }`} />
-                    )}
-                    
-                    {/* Icon container */}
-                    <div className={`relative p-2 rounded-xl transition-all duration-200 ${
-                      action.highlight 
-                        ? (isActive 
-                            ? 'bg-purple-600 text-white shadow-lg' 
-                            : 'bg-purple-500 text-white shadow-md hover:shadow-lg hover:bg-purple-600'
-                          )
-                        : ''
-                    }`}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    
-                    {/* Label */}
-                    <span className={`text-xs font-medium transition-all duration-200 ${
-                      action.highlight && isActive ? 'text-purple-600 dark:text-purple-400' : ''
-                    }`}>
-                      {action.label}
-                    </span>
-                    
-                    {/* Active indicator voor normale acties */}
-                    {isActive && !action.highlight && (
-                      <div className="absolute -bottom-2 w-1 h-1 bg-purple-600 dark:bg-purple-400 rounded-full transition-all duration-200" />
-                    )}
-                  </Link>
-                </div>
-              );
-            })}
+      {/* Right Section - Actions & Info */}
+      <div className="flex items-center space-x-4">
+        
+        {/* Connection Status */}
+        <div className="flex items-center space-x-2">
+          {isOnline ? (
+            <div className="flex items-center space-x-1 text-green-600 dark:text-green-400">
+              <Wifi className="h-4 w-4" />
+              <span className="text-xs font-medium hidden xl:inline">Online</span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-1 text-red-600 dark:text-red-400">
+              <WifiOff className="h-4 w-4" />
+              <span className="text-xs font-medium hidden xl:inline">Offline</span>
+            </div>
+          )}
+        </div>
+
+        {/* System Actions */}
+        <div className="flex items-center space-x-1">
+          {/* Refresh */}
+          <button
+            onClick={handleRefresh}
+            className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 group"
+            title="Vernieuwen"
+          >
+            <RefreshCw className="h-4 w-4 group-hover:rotate-180 transition-transform duration-500" />
+          </button>
+          
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+            title={darkMode ? 'Lichte modus' : 'Donkere modus'}
+          >
+            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={toggleFullscreen}
+            className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+            title={isFullscreen ? 'Verlaat volledig scherm' : 'Volledig scherm'}
+          >
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
+        </div>
+
+        {/* Notifications */}
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="relative p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all duration-200 hover:scale-105"
+            title="Notificaties"
+          >
+            <Bell className="h-5 w-5" />
             
-            {/* More button */}
-            <div className="flex items-center justify-center">
-              <button
-                onClick={handleMoreMenuToggle}
-                className={`flex flex-col items-center justify-center space-y-1 transition-all duration-200 relative w-full h-full ${
-                  showMoreMenu 
-                    ? 'text-purple-600 dark:text-purple-400' 
-                    : 'text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'
-                }`}
-                aria-label="Meer opties"
-              >
-                {/* Notificatie badge */}
-                {notificationCount > 0 && (
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">
-                      {notificationCount > 9 ? '9+' : notificationCount}
-                    </span>
+            {/* Notification Badge */}
+            {notificationCount > 0 && (
+              <div className="absolute -top-1 -right-1 z-10">
+                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-xs font-bold text-white">
+                    {notificationCount > 99 ? '99+' : notificationCount}
+                  </span>
+                </div>
+                <div className="absolute inset-0 w-5 h-5 bg-red-500/30 rounded-full animate-ping" />
+              </div>
+            )}
+          </button>
+          
+          {/* Notifications Dropdown */}
+          {showNotifications && (
+            <>
+              {/* Backdrop */}
+              <div
+                onClick={() => setShowNotifications(false)}
+                className="fixed inset-0 z-30"
+              />
+              
+              {/* Notifications Panel */}
+              <div className="absolute top-full mt-2 right-0 w-80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 z-40 max-h-96 overflow-hidden">
+                {/* Header */}
+                <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-purple-600/5 to-blue-600/5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Notificaties</h3>
+                    <div className="flex items-center space-x-1 text-xs text-purple-600 dark:text-purple-400 font-medium">
+                      <Zap className="h-3 w-3" />
+                      <span>{notificationCount} nieuw</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Notifications List */}
+                <div className="max-h-64 overflow-y-auto">
+                  {notifications && notifications.length > 0 ? (
+                    notifications.slice(0, 5).map((notification, index) => (
+                      <div
+                        key={index}
+                        className="p-4 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className="w-2 h-2 bg-purple-600 rounded-full mt-2 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
+                              {notification.title || 'Nieuwe notificatie'}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {notification.timestamp ? new Date(notification.timestamp).toLocaleTimeString('nl-NL') : 'Nu'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center">
+                      <Bell className="h-8 w-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Geen nieuwe notificaties</p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Footer */}
+                {notifications && notifications.length > 5 && (
+                  <div className="p-3 border-t border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50">
+                    <button className="w-full text-sm text-purple-600 dark:text-purple-400 font-medium hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
+                      Bekijk alle notificaties ({notifications.length})
+                    </button>
                   </div>
                 )}
-                
-                <div className="p-2">
-                  <MoreHorizontal className="h-5 w-5" />
-                </div>
-                <span className="text-xs font-medium">Meer</span>
-                
-                {/* Active indicator voor more menu */}
-                {showMoreMenu && (
-                  <div className="absolute -bottom-2 w-1 h-1 bg-purple-600 dark:bg-purple-400 rounded-full transition-all duration-200" />
-                )}
-              </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Time & Date */}
+        <div className="hidden xl:flex flex-col text-right">
+          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+            {formatTime(currentTime)}
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            {formatDate(currentTime)}
+          </div>
+        </div>
+
+        {/* Quick User Info */}
+        <div className="flex items-center space-x-3 pl-4 border-l border-gray-200 dark:border-gray-700">
+          <div className="hidden xl:flex flex-col text-right">
+            <div className="text-sm font-medium text-gray-900 dark:text-white">
+              {user?.displayName || 'Gebruiker'}
             </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+              {user?.role || 'Medewerker'}
+            </div>
+          </div>
+          
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md">
+            {user?.displayName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
-export default MobileBottomBar;
+export default TopBar;
