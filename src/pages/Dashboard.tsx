@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { NotificationProvider, useNotifications } from '../contexts/NotificationContext';
@@ -22,7 +22,8 @@ import {
   User,
   Crown,
   MoreHorizontal,
-  ChevronUp
+  ChevronUp,
+  ArrowLeft
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import DashboardHome from './DashboardHome';
@@ -49,6 +50,7 @@ import NotificationCenter from '../components/dashboard/NotificationCenter';
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const { notificationCount } = useNotifications();
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showWebmailModal, setShowWebmailModal] = useState(false);
   const [webmailUrl, setWebmailUrl] = useState('');
@@ -120,6 +122,21 @@ const Dashboard = () => {
     return location.pathname.startsWith(path);
   };
 
+  const handleBackNavigation = () => {
+    if (location.pathname === '/dashboard') {
+      return; // Already at dashboard
+    }
+    
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    if (pathParts.length <= 2) {
+      navigate('/dashboard');
+    } else {
+      navigate(-1);
+    }
+  };
+
+  const showBackButton = location.pathname !== '/dashboard';
+
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Mobile sidebar backdrop */}
@@ -130,7 +147,7 @@ const Dashboard = () => {
         onClick={toggleSidebar}
       />
 
-      {/* PROFESSIONAL DESKTOP SIDEBAR */}
+      {/* ULTRA MODERN DESKTOP SIDEBAR */}
       <aside 
         className={`fixed inset-y-0 left-0 z-30 w-72 bg-white dark:bg-gray-800 shadow-xl border-r border-gray-200 dark:border-gray-700 transform transition-all duration-300 ease-in-out ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -139,15 +156,15 @@ const Dashboard = () => {
       >
         <div className="h-full flex flex-col">
           
-          {/* CLEAN PROFESSIONAL HEADER */}
-          <div className="h-20 flex items-center justify-between px-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          {/* ULTRA MODERN HEADER */}
+          <div className="h-20 flex items-center justify-between px-6 border-b border-gray-200/30 dark:border-gray-700/30 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl">
             <div className="flex items-center space-x-4">
-              {/* CLEAN IT KNECHT LOGO */}
-              <div className="w-12 h-12 bg-white rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 p-2">
+              {/* MODERN TRANSPARENT IT KNECHT LOGO */}
+              <div className="relative">
                 <img 
                   src="https://itknecht.nl/wp-content/uploads/2025/01/cropped-cropped-file-1-1-e1736278706265.webp"
                   alt="IT Knecht Logo"
-                  className="w-full h-full object-contain"
+                  className="w-16 h-16 object-contain drop-shadow-lg"
                 />
               </div>
               
@@ -170,9 +187,9 @@ const Dashboard = () => {
             </button>
           </div>
 
-          {/* PROFESSIONAL NAVIGATION */}
+          {/* ULTRA MODERN NAVIGATION */}
           <nav className="flex-1 pt-8 pb-4 px-4 overflow-y-auto">
-            <div className="space-y-2">
+            <div className="space-y-1">
               {navigation.filter(item => item.showInNav).map((item) => {
                 const isActive = location.pathname === item.href;
                 const LinkComponent = item.external ? 'a' : Link;
@@ -198,36 +215,36 @@ const Dashboard = () => {
                   <LinkComponent
                     key={item.name}
                     {...linkProps}
-                    className={`group flex items-center px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+                    className={`group flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                       isCreateButton
                         ? (isActive 
                             ? 'bg-purple-600 text-white shadow-lg' 
                             : 'bg-purple-500 hover:bg-purple-600 text-white shadow-md hover:shadow-lg'
                           )
                         : (isActive 
-                            ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800' 
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400'
+                            ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400'
                           )
                     }`}
                   >
-                    {/* Icon */}
-                    <div className={`p-2 rounded-lg mr-4 ${
+                    {/* Modern Icon */}
+                    <div className={`p-1.5 rounded-md mr-3 ${
                       isCreateButton
                         ? 'bg-white/20'
                         : (isActive 
                             ? 'bg-purple-100 dark:bg-purple-800/50' 
-                            : 'bg-gray-100 dark:bg-gray-700 group-hover:bg-purple-50 dark:group-hover:bg-purple-900/30'
+                            : 'bg-transparent'
                           )
                     }`}>
-                      <item.icon className="h-5 w-5" />
+                      <item.icon className="h-4 w-4" />
                     </div>
                     
                     {/* Label */}
-                    <span className="font-medium">{item.name}</span>
+                    <span>{item.name}</span>
                     
-                    {/* Active indicator */}
+                    {/* Clean active indicator */}
                     {isActive && !isCreateButton && (
-                      <div className="ml-auto w-2 h-2 bg-purple-500 rounded-full" />
+                      <div className="ml-auto w-1.5 h-1.5 bg-purple-500 rounded-full" />
                     )}
                   </LinkComponent>
                 );
@@ -235,61 +252,56 @@ const Dashboard = () => {
             </div>
           </nav>
 
-          {/* PROFESSIONAL USER SECTION */}
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-            <div 
-              className="relative group"
-              onMouseEnter={() => setShowUserMenu(true)}
-              onMouseLeave={() => setShowUserMenu(false)}
-            >
-              <Link 
-                to="/dashboard/settings" 
-                className="flex items-center p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-200 dark:border-gray-600"
+          {/* ULTRA MODERN USER SECTION */}
+          <div className="border-t border-gray-200/30 dark:border-gray-700/30 p-4">
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="w-full flex items-center p-3 rounded-lg bg-gray-50/50 dark:bg-gray-700/30 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-all duration-200 border border-gray-200/50 dark:border-gray-600/50"
               >
-                {/* Clean Avatar */}
+                {/* Modern Avatar */}
                 <div className="relative">
-                  <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center text-white font-bold shadow-md overflow-hidden">
+                  <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center text-white font-semibold shadow-sm overflow-hidden">
                     {user?.avatar ? (
                       <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-lg">{user?.name?.charAt(0).toUpperCase() || 'U'}</span>
+                      <span>{user?.name?.charAt(0).toUpperCase() || 'U'}</span>
                     )}
                   </div>
                   
                   {/* Online indicator */}
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border border-white dark:border-gray-800 rounded-full" />
                 </div>
                 
-                <div className="ml-4 flex-1 min-w-0">
+                <div className="ml-3 flex-1 min-w-0 text-left">
                   <div className="flex items-center space-x-2">
-                    <p className="font-semibold text-gray-900 dark:text-white truncate">
+                    <p className="font-medium text-gray-900 dark:text-white truncate text-sm">
                       {user?.name || 'User'}
                     </p>
                     
                     {/* Clean admin badge */}
                     {user?.role === 'admin' && (
-                      <div className="bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-md text-xs font-medium flex items-center space-x-1">
-                        <Crown className="h-3 w-3" />
-                        <span>Admin</span>
+                      <div className="bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded text-xs font-medium">
+                        Admin
                       </div>
                     )}
                   </div>
                   
-                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {user?.email || 'user@example.com'}
                   </p>
                 </div>
                 
-                <User className="h-5 w-5 text-gray-400" />
-              </Link>
+                <User className="h-4 w-4 text-gray-400" />
+              </button>
               
-              {/* Clean user menu */}
+              {/* Ultra modern user menu */}
               {showUserMenu && (
-                <div className="absolute bottom-full mb-2 left-4 right-4 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
-                  <div className="py-2">
+                <div className="absolute bottom-full mb-2 left-0 right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden z-50">
+                  <div className="py-1">
                     <Link
                       to="/dashboard/settings"
-                      className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      className="flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-all duration-200 text-sm"
                       onClick={() => setShowUserMenu(false)}
                     >
                       <Settings className="h-4 w-4" />
@@ -299,7 +311,7 @@ const Dashboard = () => {
                     {user?.role === 'admin' && (
                       <Link
                         to="/dashboard/admin"
-                        className="flex items-center space-x-3 px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        className="flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-all duration-200 text-sm"
                         onClick={() => setShowUserMenu(false)}
                       >
                         <Crown className="h-4 w-4" />
@@ -312,7 +324,7 @@ const Dashboard = () => {
                         setShowUserMenu(false);
                         handleLogout();
                       }}
-                      className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      className="w-full flex items-center space-x-3 px-3 py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-900/20 transition-all duration-200 text-sm"
                     >
                       <LogOut className="h-4 w-4" />
                       <span>Uitloggen</span>
@@ -327,18 +339,27 @@ const Dashboard = () => {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden min-h-screen">
-        {/* CLEAN TOP HEADER */}
-        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 z-10">
+        {/* ULTRA MODERN TOP HEADER */}
+        <header className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-sm border-b border-gray-200/50 dark:border-gray-700/50 z-10">
           <div className="px-4 lg:px-6">
             <div className="h-16 flex items-center justify-between">
               <div className="flex items-center">
-                {/* Mobile menu button */}
-                <button
-                  className="lg:hidden p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 mr-3 transition-colors"
-                  onClick={toggleSidebar}
-                >
-                  <Menu className="h-6 w-6" />
-                </button>
+                {/* Mobile back/menu button */}
+                {showBackButton ? (
+                  <button
+                    className="lg:hidden p-2.5 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 mr-3 transition-all duration-200 backdrop-blur-sm"
+                    onClick={handleBackNavigation}
+                  >
+                    <ArrowLeft className="h-6 w-6" />
+                  </button>
+                ) : (
+                  <button
+                    className="lg:hidden p-2.5 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 mr-3 transition-all duration-200 backdrop-blur-sm"
+                    onClick={toggleSidebar}
+                  >
+                    <Menu className="h-6 w-6" />
+                  </button>
+                )}
                 
                 {/* Page title */}
                 <div>
@@ -384,7 +405,7 @@ const Dashboard = () => {
         </main>
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION - WOW EFFECT */}
+      {/* MOBILE BOTTOM NAVIGATION - ULTRA MODERN */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
         {/* Mobile menu overlay */}
         {showMobileMenu && (
@@ -395,24 +416,24 @@ const Dashboard = () => {
               style={{ bottom: '80px' }}
             />
             
-            {/* WOW Mobile Menu */}
-            <div className="fixed bottom-20 left-2 right-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden transform transition-all duration-300 origin-bottom">
+            {/* Ultra Modern Mobile Menu */}
+            <div className="fixed bottom-20 left-2 right-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 z-50 overflow-hidden transform transition-all duration-300 origin-bottom">
               {/* Menu header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200/50 dark:border-gray-700/50 bg-purple-500/5 dark:bg-purple-900/10">
                 <h3 className="text-lg font-bold text-purple-600 dark:text-purple-400">
                   Menu
                 </h3>
                 <button
                   onClick={() => setShowMobileMenu(false)}
-                  className="p-2 rounded-full bg-white dark:bg-gray-700 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 shadow-md transition-colors"
+                  className="p-2 rounded-lg bg-white/80 dark:bg-gray-700/80 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 shadow-sm transition-all duration-200 backdrop-blur-sm"
                 >
                   <ChevronUp className="h-5 w-5" />
                 </button>
               </div>
               
-              {/* Menu items */}
-              <div className="py-3 max-h-80 overflow-y-auto">
-                <div className="grid grid-cols-2 gap-2 px-3">
+              {/* Menu items - ALLEEN ICONEN */}
+              <div className="py-4">
+                <div className="grid grid-cols-4 gap-4 px-4">
                   {mobileMenuItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = isActiveLink(item.href);
@@ -422,20 +443,19 @@ const Dashboard = () => {
                         key={item.href}
                         to={item.href}
                         onClick={() => setShowMobileMenu(false)}
-                        className={`flex flex-col items-center space-y-2 p-4 rounded-xl transition-all duration-200 ${
+                        className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-200 ${
                           isActive 
-                            ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800' 
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 shadow-sm' 
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 hover:text-purple-600 dark:hover:text-purple-400'
                         }`}
                       >
-                        <div className={`p-3 rounded-xl ${
+                        <div className={`p-3 rounded-lg transition-all duration-200 ${
                           isActive 
-                            ? 'bg-purple-100 dark:bg-purple-800/50' 
-                            : 'bg-gray-100 dark:bg-gray-600'
+                            ? 'bg-purple-500/20' 
+                            : 'bg-gray-100/50 dark:bg-gray-700/50 hover:bg-purple-500/10'
                         }`}>
-                          <Icon className="h-5 w-5" />
+                          <Icon className="h-6 w-6" />
                         </div>
-                        <span className="text-xs font-medium text-center">{item.name}</span>
                       </Link>
                     );
                   })}
@@ -508,47 +528,6 @@ const Dashboard = () => {
                             isActive 
                               ? 'bg-purple-500/10 shadow-sm' 
                               : 'hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
-                          }`}>
-                            <Icon className="h-5 w-5" />
-                            {isActive && (
-                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full" />
-                            )}
-                          </div>
-                        )}
-                        
-                        <span className="text-xs font-medium">{item.name}</span>
-                      </Link>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>highlight
-                            ? (isActive 
-                                ? 'text-white' 
-                                : 'text-white hover:text-white'
-                              )
-                            : (isActive 
-                                ? 'text-purple-600 dark:text-purple-400' 
-                                : 'text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
-                              )
-                        }`}
-                      >
-                        {/* Special styling for highlight button */}
-                        {item.highlight ? (
-                          <div className={`relative ${
-                            isActive 
-                              ? 'bg-purple-600 shadow-lg shadow-purple-500/30' 
-                              : 'bg-purple-500 hover:bg-purple-600 shadow-md hover:shadow-lg shadow-purple-500/20'
-                          } p-3 rounded-xl transition-all duration-200`}>
-                            <Icon className="h-6 w-6" />
-                          </div>
-                        ) : (
-                          <div className={`p-2 rounded-xl transition-all duration-200 ${
-                            isActive 
-                              ? 'bg-purple-100 dark:bg-purple-900/30' 
-                              : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                           }`}>
                             <Icon className="h-5 w-5" />
                             {isActive && (
