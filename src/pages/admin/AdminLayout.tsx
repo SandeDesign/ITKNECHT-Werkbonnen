@@ -138,7 +138,7 @@ const AdminLayout = () => {
           <Route path="/" element={<AdminDashboard />} />
           <Route path="/werkbonnen" element={<WorkOrderManagement />} />
           <Route path="/statistieken" element={<StatisticsPanel />} />
-          <Route path="/gebruikers" element={<UserManagement />} />
+          <Route path="/Gebruik" element={<UserManagement />} />
           <Route path="/tasks" element={<AdminTasks />} />
           <Route path="*" element={<Navigate to="/dashboard/admin" replace />} />
         </Routes>
