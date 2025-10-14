@@ -303,35 +303,6 @@ export class NotificationService {
     }
   }
   
-  // Setup message listener for foreground notifications
-  static setupMessageListener() {
-    try {
-      // Skip in WebContainer
-      if (isWebContainer) {
-        console.log('WebContainer environment - skipping FCM message listener setup');
-        return;
-      }
-      
-      const app = getApp();
-      const messaging = getMessaging(app);
-      
-      onMessage(messaging, (payload) => {
-        console.log('Message received in foreground:', payload);
-        
-        if (payload.notification) {
-          // Show custom in-app notification
-          this.showCustomNotification(
-            payload.notification.title || 'Nieuwe melding',
-            payload.notification.body || '',
-            payload.data?.url
-          );
-        }
-      });
-    } catch (error) {
-      console.error('Error setting up message listener:', error);
-    }
-  }
-  
   // Show a custom in-app notification
   private static showCustomNotification(title: string, body: string, url?: string) {
     // Create notification element
