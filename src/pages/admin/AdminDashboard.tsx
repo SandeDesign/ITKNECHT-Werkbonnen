@@ -3,16 +3,15 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
-  Clock, 
-  Users, 
-  FileText, 
-  AlertTriangle,
-  CheckCircle,
   DollarSign,
-  Calendar
+  Calendar,
+  Users,
+  FileText,
+  AlertTriangle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { StatisticsService, StatsSummary, TopPerformer, RecentActivity } from '../../services/StatisticsService';
+import Input from '../../components/ui/Input';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState<StatsSummary | null>(null);
@@ -20,6 +19,10 @@ const AdminDashboard = () => {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
@@ -29,7 +32,7 @@ const AdminDashboard = () => {
 
         const [overallStats, performers, activity] = await Promise.all([
           StatisticsService.getOverallStats(),
-          StatisticsService.getTopPerformers(3),
+          StatisticsService.getMonthlyTopPerformers(selectedMonth, 3),
           StatisticsService.getRecentActivity(3)
         ]);
 
@@ -48,7 +51,7 @@ const AdminDashboard = () => {
     };
 
     fetchDashboardStats();
-  }, []);
+  }, [selectedMonth]);
 
   if (!stats) {
     return (
@@ -158,15 +161,23 @@ const AdminDashboard = () => {
         >
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="h-5 w-5 text-primary-600" />
-                <span>Top Presteerders</span>
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  <TrendingUp className="h-5 w-5 text-primary-600" />
+                  <span>Top Presteerders</span>
+                </CardTitle>
+                <Input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="w-40"
+                />
+              </div>
             </CardHeader>
             <CardContent>
               {topPerformers.length === 0 ? (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  Geen data beschikbaar
+                  Geen data beschikbaar voor {new Date(selectedMonth + '-01').toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' })}
                 </p>
               ) : (
                 <div className="space-y-4">
