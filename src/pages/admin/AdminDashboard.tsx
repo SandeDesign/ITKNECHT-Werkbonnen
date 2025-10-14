@@ -334,10 +334,10 @@ const AdminDashboard = () => {
                   <Users className="h-6 w-6 text-blue-600 group-hover:text-blue-700" />
                   <div>
                     <h3 className="font-medium text-gray-900 dark:text-white">
-                      Gebruikers Beheren
+                      Werknemers Beheren
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {stats.activeUsers} actieve gebruikers
+                      {stats.activeUsers} actieve werknemers
                     </p>
                   </div>
                 </div>
