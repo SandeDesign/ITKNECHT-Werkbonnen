@@ -24,7 +24,8 @@ import {
   MoreHorizontal,
   ChevronUp,
   ArrowLeft,
-  Shield
+  Shield,
+  UserCircle
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import DashboardHome from './DashboardHome';
@@ -57,7 +58,20 @@ const Dashboard = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const location = useLocation();
 
-  const baseNavigation = [
+  const isAdmin = user?.role === 'admin';
+
+  // Admin krijgt aangepaste navigatie
+  const baseNavigation = isAdmin ? [
+    { name: 'Admin Dashboard', href: '/dashboard/admin', icon: LayoutDashboard, showInNav: true },
+    { name: 'Medewerker Dashboard', href: '/dashboard', icon: UserCircle, showInNav: true },
+    { name: 'Werkbon aanmaken', href: '/dashboard/create', icon: Plus, showInNav: true },
+    { name: 'Agenda', href: '/dashboard/calendar', icon: CalendarIcon, showInNav: true },
+    { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3, showInNav: true },
+    { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users, showInNav: true },
+    { name: 'Contacten', href: '/dashboard/contacts', icon: Contact, showInNav: true },
+    { name: 'Ideeën bus', href: '/dashboard/feedback', icon: MessageSquare, showInNav: true },
+    { name: 'Bronnen', href: '/dashboard/resources', icon: FileText, showInNav: true }
+  ] : [
     { name: 'Home', href: '/dashboard', icon: Home, showInNav: true },
     { name: 'Werkbon aanmaken', href: '/dashboard/create', icon: Plus, showInNav: true },
     { name: 'Agenda', href: '/dashboard/calendar', icon: CalendarIcon, showInNav: true },
@@ -67,29 +81,35 @@ const Dashboard = () => {
     { name: 'Ideeën bus', href: '/dashboard/feedback', icon: MessageSquare, showInNav: true },
     { name: 'Bronnen', href: '/dashboard/resources', icon: FileText, showInNav: true }
   ];
-  
-  const adminNavigation = [
-    { name: 'Admin Panel', href: '/dashboard/admin', icon: Shield, showInNav: true }
-  ];
 
-  const navigation = [...baseNavigation, ...(user?.role === 'admin' ? adminNavigation : [])];
+  const navigation = baseNavigation;
 
-  // Mobile navigation - 4 hoofditems
+  // Mobile navigation - admin krijgt Admin Dashboard als home
   const mobileMainNav = [
-    { name: 'Home', href: '/dashboard', icon: Home },
+    { 
+      name: isAdmin ? 'Admin' : 'Home', 
+      href: isAdmin ? '/dashboard/admin' : '/dashboard', 
+      icon: isAdmin ? LayoutDashboard : Home 
+    },
     { name: 'Nieuwe Werkbon', href: '/dashboard/create', icon: Plus, highlight: true },
     { name: 'Agenda', href: '/dashboard/calendar', icon: CalendarIcon },
     { name: 'Meer', action: 'menu', icon: MoreHorizontal }
   ];
 
-  // Overige items voor mobile menu
-  const mobileMenuItems = [
+  // Mobile menu items - admin krijgt Medewerker Dashboard item
+  const mobileMenuItems = isAdmin ? [
+    { name: 'Medewerker Dashboard', href: '/dashboard', icon: UserCircle },
     { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3 },
     { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users },
     { name: 'Contacten', href: '/dashboard/contacts', icon: Contact },
     { name: 'Ideeën bus', href: '/dashboard/feedback', icon: MessageSquare },
-    { name: 'Bronnen', href: '/dashboard/resources', icon: FileText },
-    ...(user?.role === 'admin' ? [{ name: 'Admin Panel', href: '/dashboard/admin', icon: Shield }] : [])
+    { name: 'Bronnen', href: '/dashboard/resources', icon: FileText }
+  ] : [
+    { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3 },
+    { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users },
+    { name: 'Contacten', href: '/dashboard/contacts', icon: Contact },
+    { name: 'Ideeën bus', href: '/dashboard/feedback', icon: MessageSquare },
+    { name: 'Bronnen', href: '/dashboard/resources', icon: FileText }
   ];
 
   const toggleSidebar = () => {
@@ -114,23 +134,26 @@ const Dashboard = () => {
     if (path === '/dashboard') {
       return location.pathname === '/dashboard';
     }
+    if (path === '/dashboard/admin') {
+      return location.pathname === '/dashboard/admin' || location.pathname.startsWith('/dashboard/admin/');
+    }
     return location.pathname.startsWith(path);
   };
 
   const handleBackNavigation = () => {
-    if (location.pathname === '/dashboard') {
+    if (location.pathname === '/dashboard' || location.pathname === '/dashboard/admin') {
       return;
     }
     
     const pathParts = location.pathname.split('/').filter(Boolean);
     if (pathParts.length <= 2) {
-      navigate('/dashboard');
+      navigate(isAdmin ? '/dashboard/admin' : '/dashboard');
     } else {
       navigate(-1);
     }
   };
 
-  const showBackButton = location.pathname !== '/dashboard';
+  const showBackButton = location.pathname !== '/dashboard' && location.pathname !== '/dashboard/admin';
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
@@ -202,7 +225,8 @@ const Dashboard = () => {
                 };
                 
                 const isCreateButton = item.name === 'Werkbon aanmaken';
-                const isAdminButton = item.name === 'Admin Panel';
+                const isAdminDashboard = item.name === 'Admin Dashboard';
+                const isMedewerkerDashboard = item.name === 'Medewerker Dashboard';
                 
                 return (
                   <LinkComponent
@@ -214,10 +238,15 @@ const Dashboard = () => {
                             ? 'bg-purple-600 text-white shadow-lg' 
                             : 'bg-purple-500 hover:bg-purple-600 text-white shadow-md hover:shadow-lg'
                           )
-                        : isAdminButton
+                        : isAdminDashboard
                         ? (isActive
                             ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800'
                             : 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 border border-orange-200/50 dark:border-orange-800/50'
+                          )
+                        : isMedewerkerDashboard
+                        ? (isActive
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            : 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30'
                           )
                         : (isActive 
                             ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
@@ -228,8 +257,10 @@ const Dashboard = () => {
                     <div className={`p-1.5 rounded-md mr-3 ${
                       isCreateButton
                         ? 'bg-white/20'
-                        : isAdminButton
+                        : isAdminDashboard
                         ? (isActive ? 'bg-orange-100 dark:bg-orange-800/50' : 'bg-orange-100/50 dark:bg-orange-800/30')
+                        : isMedewerkerDashboard
+                        ? (isActive ? 'bg-blue-100 dark:bg-blue-800/50' : 'bg-blue-100/50 dark:bg-blue-800/30')
                         : (isActive 
                             ? 'bg-purple-100 dark:bg-purple-800/50' 
                             : 'bg-transparent'
@@ -240,7 +271,7 @@ const Dashboard = () => {
                     
                     <span>{item.name}</span>
                     
-                    {isActive && !isCreateButton && !isAdminButton && (
+                    {isActive && !isCreateButton && !isAdminDashboard && !isMedewerkerDashboard && (
                       <div className="ml-auto w-1.5 h-1.5 bg-purple-500 rounded-full" />
                     )}
                   </LinkComponent>
@@ -413,7 +444,7 @@ const Dashboard = () => {
                   {mobileMenuItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = isActiveLink(item.href);
-                    const isAdminItem = item.name === 'Admin Panel';
+                    const isMedewerkerItem = item.name === 'Medewerker Dashboard';
                     
                     return (
                       <Link
@@ -421,10 +452,10 @@ const Dashboard = () => {
                         to={item.href}
                         onClick={() => setShowMobileMenu(false)}
                         className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 ${
-                          isAdminItem
+                          isMedewerkerItem
                             ? (isActive
-                                ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 shadow-sm border border-orange-200 dark:border-orange-800'
-                                : 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 border border-orange-200/30 dark:border-orange-800/30'
+                                ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm'
+                                : 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30'
                               )
                             : (isActive 
                                 ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 shadow-sm' 
@@ -433,8 +464,8 @@ const Dashboard = () => {
                         }`}
                       >
                         <div className={`p-2.5 rounded-lg transition-all duration-200 mb-1 ${
-                          isAdminItem
-                            ? (isActive ? 'bg-orange-500/20' : 'bg-orange-100/50 dark:bg-orange-800/30')
+                          isMedewerkerItem
+                            ? (isActive ? 'bg-blue-500/20' : 'bg-blue-100/50 dark:bg-blue-800/30')
                             : (isActive 
                                 ? 'bg-purple-500/20' 
                                 : 'bg-gray-100/50 dark:bg-gray-700/50 hover:bg-purple-500/10'
@@ -458,6 +489,7 @@ const Dashboard = () => {
               {mobileMainNav.map((item) => {
                 const Icon = item.icon;
                 const isActive = item.action !== 'menu' && isActiveLink(item.href);
+                const isAdminHome = isAdmin && item.name === 'Admin';
                 
                 return (
                   <div key={item.name} className="flex-1 flex justify-center">
@@ -493,6 +525,11 @@ const Dashboard = () => {
                         className={`flex flex-col items-center justify-center space-y-1 p-2 transition-all duration-200 relative ${
                           item.highlight
                             ? 'text-white'
+                            : isAdminHome
+                            ? (isActive
+                                ? 'text-orange-600 dark:text-orange-400'
+                                : 'text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-300'
+                              )
                             : (isActive 
                                 ? 'text-purple-600 dark:text-purple-400' 
                                 : 'text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
@@ -509,13 +546,21 @@ const Dashboard = () => {
                           </div>
                         ) : (
                           <div className={`p-2.5 rounded-lg transition-all duration-200 relative ${
-                            isActive 
-                              ? 'bg-purple-500/10 shadow-sm' 
-                              : 'hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
+                            isAdminHome
+                              ? (isActive
+                                  ? 'bg-orange-500/10 shadow-sm'
+                                  : 'hover:bg-orange-100/50 dark:hover:bg-orange-900/30'
+                                )
+                              : (isActive 
+                                  ? 'bg-purple-500/10 shadow-sm' 
+                                  : 'hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
+                                )
                           }`}>
                             <Icon className="h-5 w-5" />
                             {isActive && (
-                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-purple-500 rounded-full" />
+                              <div className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
+                                isAdminHome ? 'bg-orange-500' : 'bg-purple-500'
+                              }`} />
                             )}
                           </div>
                         )}
