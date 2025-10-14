@@ -23,17 +23,15 @@ import {
   Crown,
   MoreHorizontal,
   ChevronUp,
-  ArrowLeft
+  ArrowLeft,
+  Shield
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import DashboardHome from './DashboardHome';
 import Profile from '../components/dashboard/Profile';
-import { default as SettingsPage } from '../components/dashboard/Settings';
-import Werkbonnen from './Werkbonnen';
 import Overview from '../components/dashboard/Overview';
 import Colleagues from './Colleagues';
 import UserSettings from '../components/dashboard/UserSettings';
-import { default as AdminPanel } from '../components/dashboard/Settings';
 import ColleagueProfile from './ColleagueProfile';
 import TutorialOverlay from '../components/TutorialOverlay';
 import Resources from './Resources';
@@ -55,7 +53,6 @@ const Dashboard = () => {
   const [showWebmailModal, setShowWebmailModal] = useState(false);
   const [webmailUrl, setWebmailUrl] = useState('');
   const [isTutorialActive, setIsTutorialActive] = useState(false);
-  const [showAdminSubMenu, setShowAdminSubMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const location = useLocation();
@@ -65,7 +62,6 @@ const Dashboard = () => {
     { name: 'Werkbon aanmaken', href: '/dashboard/create', icon: Plus, showInNav: true },
     { name: 'Agenda', href: '/dashboard/calendar', icon: CalendarIcon, showInNav: true },
     { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3, showInNav: true },
-    { name: 'Mijn Taken', href: '/dashboard/tasks', icon: CheckSquare, showInNav: false },
     { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users, showInNav: true },
     { name: 'Contacten', href: '/dashboard/contacts', icon: Contact, showInNav: true },
     { name: 'Ideeën bus', href: '/dashboard/feedback', icon: MessageSquare, showInNav: true },
@@ -73,7 +69,7 @@ const Dashboard = () => {
   ];
   
   const adminNavigation = [
-    { name: 'Admin Panel', href: '/dashboard/admin', icon: Settings, showInNav: false }
+    { name: 'Admin Panel', href: '/dashboard/admin', icon: Shield, showInNav: true }
   ];
 
   const navigation = [...baseNavigation, ...(user?.role === 'admin' ? adminNavigation : [])];
@@ -89,12 +85,11 @@ const Dashboard = () => {
   // Overige items voor mobile menu
   const mobileMenuItems = [
     { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3 },
-    { name: 'Mijn Taken', href: '/dashboard/tasks', icon: CheckSquare },
     { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users },
     { name: 'Contacten', href: '/dashboard/contacts', icon: Contact },
     { name: 'Ideeën bus', href: '/dashboard/feedback', icon: MessageSquare },
     { name: 'Bronnen', href: '/dashboard/resources', icon: FileText },
-    ...(user?.role === 'admin' ? [{ name: 'Admin Panel', href: '/dashboard/admin', icon: Settings }] : [])
+    ...(user?.role === 'admin' ? [{ name: 'Admin Panel', href: '/dashboard/admin', icon: Shield }] : [])
   ];
 
   const toggleSidebar = () => {
@@ -124,7 +119,7 @@ const Dashboard = () => {
 
   const handleBackNavigation = () => {
     if (location.pathname === '/dashboard') {
-      return; // Already at dashboard
+      return;
     }
     
     const pathParts = location.pathname.split('/').filter(Boolean);
@@ -159,7 +154,6 @@ const Dashboard = () => {
           {/* ULTRA MODERN HEADER */}
           <div className="h-20 flex items-center justify-between px-6 border-b border-gray-200/30 dark:border-gray-700/30 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl">
             <div className="flex items-center space-x-4">
-              {/* MODERN TRANSPARENT IT KNECHT LOGO */}
               <div className="relative">
                 <img 
                   src="https://itknecht.nl/wp-content/uploads/2025/01/cropped-cropped-file-1-1-e1736278706265.webp"
@@ -178,7 +172,6 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* CLEAN CLOSE BUTTON */}
             <button
               className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               onClick={toggleSidebar}
@@ -191,7 +184,7 @@ const Dashboard = () => {
           <nav className="flex-1 pt-8 pb-4 px-4 overflow-y-auto">
             <div className="space-y-1">
               {navigation.filter(item => item.showInNav).map((item) => {
-                const isActive = location.pathname === item.href;
+                const isActive = isActiveLink(item.href);
                 const LinkComponent = item.external ? 'a' : Link;
                 const linkProps = item.external ? { 
                   href: '#',
@@ -208,8 +201,8 @@ const Dashboard = () => {
                   }
                 };
                 
-                // Special styling for Create button
                 const isCreateButton = item.name === 'Werkbon aanmaken';
+                const isAdminButton = item.name === 'Admin Panel';
                 
                 return (
                   <LinkComponent
@@ -221,16 +214,22 @@ const Dashboard = () => {
                             ? 'bg-purple-600 text-white shadow-lg' 
                             : 'bg-purple-500 hover:bg-purple-600 text-white shadow-md hover:shadow-lg'
                           )
+                        : isAdminButton
+                        ? (isActive
+                            ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800'
+                            : 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 border border-orange-200/50 dark:border-orange-800/50'
+                          )
                         : (isActive 
                             ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' 
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-purple-600 dark:hover:text-purple-400'
                           )
                     }`}
                   >
-                    {/* Modern Icon */}
                     <div className={`p-1.5 rounded-md mr-3 ${
                       isCreateButton
                         ? 'bg-white/20'
+                        : isAdminButton
+                        ? (isActive ? 'bg-orange-100 dark:bg-orange-800/50' : 'bg-orange-100/50 dark:bg-orange-800/30')
                         : (isActive 
                             ? 'bg-purple-100 dark:bg-purple-800/50' 
                             : 'bg-transparent'
@@ -239,11 +238,9 @@ const Dashboard = () => {
                       <item.icon className="h-4 w-4" />
                     </div>
                     
-                    {/* Label */}
                     <span>{item.name}</span>
                     
-                    {/* Clean active indicator */}
-                    {isActive && !isCreateButton && (
+                    {isActive && !isCreateButton && !isAdminButton && (
                       <div className="ml-auto w-1.5 h-1.5 bg-purple-500 rounded-full" />
                     )}
                   </LinkComponent>
@@ -259,7 +256,6 @@ const Dashboard = () => {
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="w-full flex items-center p-3 rounded-lg bg-gray-50/50 dark:bg-gray-700/30 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 transition-all duration-200 border border-gray-200/50 dark:border-gray-600/50"
               >
-                {/* Modern Avatar */}
                 <div className="relative">
                   <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center text-white font-semibold shadow-sm overflow-hidden">
                     {user?.avatar ? (
@@ -269,7 +265,6 @@ const Dashboard = () => {
                     )}
                   </div>
                   
-                  {/* Online indicator */}
                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border border-white dark:border-gray-800 rounded-full" />
                 </div>
                 
@@ -279,7 +274,6 @@ const Dashboard = () => {
                       {user?.name || 'User'}
                     </p>
                     
-                    {/* Clean admin badge */}
                     {user?.role === 'admin' && (
                       <div className="bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded text-xs font-medium">
                         Admin
@@ -295,7 +289,6 @@ const Dashboard = () => {
                 <User className="h-4 w-4 text-gray-400" />
               </button>
               
-              {/* Ultra modern user menu */}
               {showUserMenu && (
                 <div className="absolute bottom-full mb-2 left-0 right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden z-50">
                   <div className="py-1">
@@ -307,17 +300,6 @@ const Dashboard = () => {
                       <Settings className="h-4 w-4" />
                       <span>Instellingen</span>
                     </Link>
-                    
-                    {user?.role === 'admin' && (
-                      <Link
-                        to="/dashboard/admin"
-                        className="flex items-center space-x-3 px-3 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-all duration-200 text-sm"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        <Crown className="h-4 w-4" />
-                        <span>Admin Panel</span>
-                      </Link>
-                    )}
                     
                     <button
                       onClick={() => {
@@ -344,7 +326,6 @@ const Dashboard = () => {
           <div className="px-4 lg:px-6">
             <div className="h-16 flex items-center justify-between">
               <div className="flex items-center">
-                {/* Mobile back/menu button */}
                 {showBackButton ? (
                   <button
                     className="lg:hidden p-2.5 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 mr-3 transition-all duration-200 backdrop-blur-sm"
@@ -361,7 +342,6 @@ const Dashboard = () => {
                   </button>
                 )}
                 
-                {/* Page title */}
                 <div>
                   <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                     {location.pathname.startsWith('/dashboard/admin') ? 'Admin Panel' : 
@@ -405,9 +385,8 @@ const Dashboard = () => {
         </main>
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION - ULTRA MODERN */}
+      {/* MOBILE BOTTOM NAVIGATION */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
-        {/* Mobile menu overlay */}
         {showMobileMenu && (
           <>
             <div
@@ -416,9 +395,7 @@ const Dashboard = () => {
               style={{ bottom: '80px' }}
             />
             
-            {/* Ultra Modern Mobile Menu */}
             <div className="fixed bottom-20 left-2 right-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 z-50 overflow-hidden transform transition-all duration-300 origin-bottom">
-              {/* Menu header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200/50 dark:border-gray-700/50 bg-purple-500/5 dark:bg-purple-900/10">
                 <h3 className="text-lg font-bold text-purple-600 dark:text-purple-400">
                   Menu
@@ -431,31 +408,41 @@ const Dashboard = () => {
                 </button>
               </div>
               
-              {/* Menu items - ALLEEN ICONEN */}
               <div className="py-4">
-                <div className="grid grid-cols-4 gap-4 px-4">
+                <div className="grid grid-cols-3 gap-3 px-4">
                   {mobileMenuItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = isActiveLink(item.href);
+                    const isAdminItem = item.name === 'Admin Panel';
                     
                     return (
                       <Link
                         key={item.href}
                         to={item.href}
                         onClick={() => setShowMobileMenu(false)}
-                        className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-200 ${
-                          isActive 
-                            ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 shadow-sm' 
-                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 hover:text-purple-600 dark:hover:text-purple-400'
+                        className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 ${
+                          isAdminItem
+                            ? (isActive
+                                ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 shadow-sm border border-orange-200 dark:border-orange-800'
+                                : 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 border border-orange-200/30 dark:border-orange-800/30'
+                              )
+                            : (isActive 
+                                ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 shadow-sm' 
+                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 hover:text-purple-600 dark:hover:text-purple-400'
+                              )
                         }`}
                       >
-                        <div className={`p-3 rounded-lg transition-all duration-200 ${
-                          isActive 
-                            ? 'bg-purple-500/20' 
-                            : 'bg-gray-100/50 dark:bg-gray-700/50 hover:bg-purple-500/10'
+                        <div className={`p-2.5 rounded-lg transition-all duration-200 mb-1 ${
+                          isAdminItem
+                            ? (isActive ? 'bg-orange-500/20' : 'bg-orange-100/50 dark:bg-orange-800/30')
+                            : (isActive 
+                                ? 'bg-purple-500/20' 
+                                : 'bg-gray-100/50 dark:bg-gray-700/50 hover:bg-purple-500/10'
+                              )
                         }`}>
-                          <Icon className="h-6 w-6" />
+                          <Icon className="h-5 w-5" />
                         </div>
+                        <span className="text-xs font-medium text-center leading-tight">{item.name}</span>
                       </Link>
                     );
                   })}
@@ -465,7 +452,6 @@ const Dashboard = () => {
           </>
         )}
 
-        {/* Ultra Modern Bottom Navigation Bar */}
         <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 shadow-xl">
           <div style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <div className="flex items-center justify-around h-16 px-2">
@@ -484,7 +470,6 @@ const Dashboard = () => {
                             : 'text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
                         }`}
                       >
-                        {/* Notification badge */}
                         {notificationCount > 0 && (
                           <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
                             <span className="text-xs font-bold text-white">
@@ -514,7 +499,6 @@ const Dashboard = () => {
                               )
                         }`}
                       >
-                        {/* Special styling for highlight button */}
                         {item.highlight ? (
                           <div className={`relative ${
                             isActive 
@@ -547,7 +531,6 @@ const Dashboard = () => {
         </div>
       </div>
       
-      {/* Original components */}
       <TutorialOverlay 
         isActive={isTutorialActive}
         onClose={() => setIsTutorialActive(false)}
@@ -558,7 +541,6 @@ const Dashboard = () => {
         onConfirm={handleWebmailConfirm}
       />
 
-      {/* CSS ANIMATIONS */}
       <style jsx>{`
         @keyframes slideInUp {
           from {
