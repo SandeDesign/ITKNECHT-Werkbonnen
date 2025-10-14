@@ -322,6 +322,77 @@ export class StatisticsService {
   }
 
   /**
+   * Get top performers for specific month
+   */
+  static async getMonthlyTopPerformers(month: string, limit: number = 10): Promise<TopPerformer[]> {
+    try {
+      console.log('🔧 StatisticsService: Getting monthly top performers for:', month);
+      
+      const [year, monthNum] = month.split('-').map(Number);
+      const monthStart = new Date(year, monthNum - 1, 1);
+      monthStart.setHours(0, 0, 0, 0);
+      
+      const monthEnd = new Date(year, monthNum, 0);
+      monthEnd.setHours(23, 59, 59, 999);
+      
+      const monthOrders = await this.getWorkOrders({
+        startDate: monthStart.toISOString(),
+        endDate: monthEnd.toISOString().split('T')[0]
+      });
+      
+      const userStats: Record<string, {
+        name: string;
+        hours: number;
+        orders: number;
+        revenue: number;
+        plannedHours: number;
+      }> = {};
+
+      monthOrders.forEach(order => {
+        const hours = Number(order.totalHours) || 0;
+        const revenue = hours * HOURLY_RATE;
+        const plannedHours = order.entries?.reduce((sum, entry) => 
+          sum + (Number(entry.plannedHours) || 0), 0) || 0;
+
+        if (order.userId && order.userName) {
+          if (!userStats[order.userId]) {
+            userStats[order.userId] = {
+              name: order.userName,
+              hours: 0,
+              orders: 0,
+              revenue: 0,
+              plannedHours: 0
+            };
+          }
+          
+          userStats[order.userId].hours += hours;
+          userStats[order.userId].orders++;
+          userStats[order.userId].revenue += revenue;
+          userStats[order.userId].plannedHours += plannedHours;
+        }
+      });
+
+      const topPerformers = Object.entries(userStats)
+        .map(([id, stats]) => ({
+          id,
+          name: stats.name,
+          hours: stats.hours,
+          orders: stats.orders,
+          revenue: stats.revenue,
+          efficiency: stats.plannedHours > 0 ? (stats.hours / stats.plannedHours) * 100 : 0
+        }))
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, limit);
+
+      console.log('✅ StatisticsService: Monthly top performers:', topPerformers.length);
+      return topPerformers;
+    } catch (error) {
+      console.error('❌ StatisticsService: Error getting monthly top performers:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get recent activity
    */
   static async getRecentActivity(limit: number = 10): Promise<RecentActivity[]> {
