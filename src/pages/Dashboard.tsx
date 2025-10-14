@@ -50,6 +50,7 @@ const Dashboard = () => {
   const { user, logout } = useAuth();
   const { notificationCount } = useNotifications();
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showWebmailModal, setShowWebmailModal] = useState(false);
   const [webmailUrl, setWebmailUrl] = useState('');
   const [isTutorialActive, setIsTutorialActive] = useState(false);
@@ -58,7 +59,6 @@ const Dashboard = () => {
   const location = useLocation();
 
   const isAdmin = user?.role === 'admin';
-  const isHomePage = location.pathname === '/dashboard' || location.pathname === '/dashboard/admin';
 
   // Admin krijgt aangepaste navigatie
   const baseNavigation = isAdmin ? [
@@ -91,7 +91,7 @@ const Dashboard = () => {
       href: isAdmin ? '/dashboard/admin' : '/dashboard', 
       icon: isAdmin ? LayoutDashboard : Home 
     },
-    { name: 'Nieuwe Werkbon', href: '/dashboard/create', icon: Plus, highlight: true },
+    { name: 'Werkbon', href: '/dashboard/create', icon: Plus, highlight: true },
     { name: 'Agenda', href: '/dashboard/calendar', icon: CalendarIcon },
     { name: 'Meer', action: 'menu', icon: MoreHorizontal }
   ];
@@ -111,6 +111,10 @@ const Dashboard = () => {
     { name: 'Ideeën bus', href: '/dashboard/feedback', icon: MessageSquare },
     { name: 'Bronnen', href: '/dashboard/resources', icon: FileText }
   ];
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   const handleLogout = () => {
     logout();
@@ -149,14 +153,26 @@ const Dashboard = () => {
     }
   };
 
+  const showBackButton = location.pathname !== '/dashboard' && location.pathname !== '/dashboard/admin';
+
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
+      {/* Mobile sidebar backdrop */}
+      <div 
+        className={`fixed inset-0 z-20 bg-black/50 backdrop-blur-sm transition-all duration-300 lg:hidden ${
+          isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={toggleSidebar}
+      />
+
       {/* ULTRA MODERN DESKTOP SIDEBAR */}
       <aside 
-        className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-72 bg-white dark:bg-gray-800 shadow-xl border-r border-gray-200 dark:border-gray-700" 
+        className={`fixed inset-y-0 left-0 z-30 w-72 bg-white dark:bg-gray-800 shadow-xl border-r border-gray-200 dark:border-gray-700 transform transition-all duration-300 ease-in-out ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } lg:translate-x-0 lg:static lg:inset-0`} 
         data-tutorial="sidebar"
       >
-        <div className="h-full flex flex-col w-full">
+        <div className="h-full flex flex-col">
           
           {/* ULTRA MODERN HEADER */}
           <div className="h-20 flex items-center justify-between px-6 border-b border-gray-200/30 dark:border-gray-700/30 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl">
@@ -178,6 +194,13 @@ const Dashboard = () => {
                 </p>
               </div>
             </div>
+            
+            <button
+              className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              onClick={toggleSidebar}
+            >
+              <X className="h-6 w-6" />
+            </button>
           </div>
 
           {/* ULTRA MODERN NAVIGATION */}
@@ -193,7 +216,12 @@ const Dashboard = () => {
                     handleWebmailClick(item.href);
                   }
                 } : { 
-                  to: item.href
+                  to: item.href,
+                  onClick: () => {
+                    if (window.innerWidth < 1024) {
+                      setIsSidebarOpen(false);
+                    }
+                  }
                 };
                 
                 const isCreateButton = item.name === 'Werkbon aanmaken';
@@ -323,32 +351,25 @@ const Dashboard = () => {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden min-h-screen lg:ml-72">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-screen">
         {/* ULTRA MODERN TOP HEADER */}
         <header className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-sm border-b border-gray-200/50 dark:border-gray-700/50 z-10">
           <div className="px-4 lg:px-6">
             <div className="h-16 flex items-center justify-between">
               <div className="flex items-center">
-                {/* Mobile profiel of terug knop */}
-                {isHomePage ? (
-                  <button
-                    onClick={() => navigate('/dashboard/settings')}
-                    className="lg:hidden p-1.5 rounded-full mr-3 transition-all duration-200"
-                  >
-                    <div className="w-9 h-9 bg-purple-500 rounded-full flex items-center justify-center text-white font-semibold shadow-md overflow-hidden">
-                      {user?.avatar ? (
-                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-sm">{user?.name?.charAt(0).toUpperCase() || 'U'}</span>
-                      )}
-                    </div>
-                  </button>
-                ) : (
+                {showBackButton ? (
                   <button
                     className="lg:hidden p-2.5 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 mr-3 transition-all duration-200 backdrop-blur-sm"
                     onClick={handleBackNavigation}
                   >
                     <ArrowLeft className="h-6 w-6" />
+                  </button>
+                ) : (
+                  <button
+                    className="lg:hidden p-2.5 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100/50 dark:hover:bg-gray-700/50 mr-3 transition-all duration-200 backdrop-blur-sm"
+                    onClick={toggleSidebar}
+                  >
+                    <Menu className="h-6 w-6" />
                   </button>
                 )}
                 
@@ -372,7 +393,7 @@ const Dashboard = () => {
         </header>
 
         {/* Content area */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 pb-20 lg:pb-0">
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 spacing pb-20 lg:pb-0">
           <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="/create" element={<Overview />} />
