@@ -343,7 +343,7 @@ const UserManagement = () => {
           {filteredUsers.length === 0 ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <Users className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">Geen gebruikers gevonden</h3>
+              <h3 className="text-lg font-medium mb-2">Geen werknemers gevonden</h3>
               <p>Probeer de filters aan te passen.</p>
             </div>
           ) : (
