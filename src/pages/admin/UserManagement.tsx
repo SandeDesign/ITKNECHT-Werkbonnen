@@ -319,7 +319,7 @@ const UserManagement = () => {
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-            <CardTitle>Gebruikers Beheer</CardTitle>
+            <CardTitle>Werknemers Beheer</CardTitle>
             <div className="flex items-center space-x-4">
               <Input
                 placeholder="Zoeken..."
