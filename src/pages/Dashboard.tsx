@@ -60,7 +60,6 @@ const Dashboard = () => {
   const isAdmin = user?.role === 'admin';
   const isHomePage = location.pathname === '/dashboard' || location.pathname === '/dashboard/admin';
 
-  // Admin krijgt aangepaste navigatie
   const baseNavigation = isAdmin ? [
     { name: 'Admin Dashboard', href: '/dashboard/admin', icon: LayoutDashboard, showInNav: true },
     { name: 'Medewerker Dashboard', href: '/dashboard', icon: UserCircle, showInNav: true },
@@ -84,19 +83,17 @@ const Dashboard = () => {
 
   const navigation = baseNavigation;
 
-  // Mobile navigation - admin krijgt Admin Dashboard als home
   const mobileMainNav = [
     { 
       name: isAdmin ? 'Admin' : 'Home', 
       href: isAdmin ? '/dashboard/admin' : '/dashboard', 
       icon: isAdmin ? LayoutDashboard : Home 
     },
-    { name: 'Nieuwe Werkbon', href: '/dashboard/create', icon: Plus, highlight: true },
+    { name: 'Werkbon', href: '/dashboard/create', icon: Plus, highlight: true },
     { name: 'Agenda', href: '/dashboard/calendar', icon: CalendarIcon },
     { name: 'Meer', action: 'menu', icon: MoreHorizontal }
   ];
 
-  // Mobile menu items - admin krijgt Medewerker Dashboard item
   const mobileMenuItems = isAdmin ? [
     { name: 'Medewerker Dashboard', href: '/dashboard', icon: UserCircle },
     { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3 },
@@ -151,14 +148,12 @@ const Dashboard = () => {
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
-      {/* ULTRA MODERN DESKTOP SIDEBAR */}
+      {/* DESKTOP SIDEBAR */}
       <aside 
         className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-72 bg-white dark:bg-gray-800 shadow-xl border-r border-gray-200 dark:border-gray-700" 
         data-tutorial="sidebar"
       >
         <div className="h-full flex flex-col w-full">
-          
-          {/* ULTRA MODERN HEADER */}
           <div className="h-20 flex items-center justify-between px-6 border-b border-gray-200/30 dark:border-gray-700/30 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl">
             <div className="flex items-center space-x-4">
               <div className="relative">
@@ -180,7 +175,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* ULTRA MODERN NAVIGATION */}
           <nav className="flex-1 pt-8 pb-4 px-4 overflow-y-auto">
             <div className="space-y-1">
               {navigation.filter(item => item.showInNav).map((item) => {
@@ -252,7 +246,6 @@ const Dashboard = () => {
             </div>
           </nav>
 
-          {/* ULTRA MODERN USER SECTION */}
           <div className="border-t border-gray-200/30 dark:border-gray-700/30 p-4">
             <div className="relative">
               <button
@@ -322,14 +315,12 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-hidden min-h-screen lg:ml-72">
-        {/* ULTRA MODERN TOP HEADER */}
         <header className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-sm border-b border-gray-200/50 dark:border-gray-700/50 z-10">
           <div className="px-4 lg:px-6">
             <div className="h-16 flex items-center justify-between">
               <div className="flex items-center">
-                {/* Mobile profiel of terug knop */}
                 {isHomePage ? (
                   <button
                     onClick={() => navigate('/dashboard/settings')}
@@ -371,8 +362,7 @@ const Dashboard = () => {
           </div>
         </header>
 
-        {/* Content area */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 pb-20 lg:pb-0">
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-4 lg:p-6 pb-24 lg:pb-6">
           <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="/create" element={<Overview />} />
@@ -395,7 +385,7 @@ const Dashboard = () => {
         </main>
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
+      {/* MOBILE BOTTOM NAV */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
         {showMobileMenu && (
           <>
@@ -564,19 +554,6 @@ const Dashboard = () => {
         onClose={() => setShowWebmailModal(false)}
         onConfirm={handleWebmailConfirm}
       />
-
-      <style jsx>{`
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px) scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-      `}</style>
     </div>
   );
 };
