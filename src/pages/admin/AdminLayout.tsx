@@ -43,7 +43,7 @@ const AdminLayout = () => {
       icon: BarChart3,
     },
     { 
-      name: 'Gebruikers', 
+      name: 'Werknemers', 
       href: '/dashboard/admin/gebruikers', 
       icon: Users,
     },
