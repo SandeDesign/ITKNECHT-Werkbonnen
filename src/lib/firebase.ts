@@ -23,7 +23,9 @@ export const auth = getAuth(app);
 // Initialize Firestore with persistence enabled
 export const db = getFirestore(app);
 
-// Helper function to get current timestamp in ISO format
+// FIXED: Helper function returns pure ISO timestamp without timezone hacks
+// This ensures consistent timestamp handling across the entire application
+// Previously used +2 hours hack which caused data inconsistencies
 export const getAdjustedTimestamp = () => {
   return new Date().toISOString();
 };
