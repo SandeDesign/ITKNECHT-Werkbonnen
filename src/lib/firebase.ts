@@ -23,11 +23,9 @@ export const auth = getAuth(app);
 // Initialize Firestore with persistence enabled
 export const db = getFirestore(app);
 
-// Helper function to adjust timestamp for timezone
+// Helper function to get current timestamp in ISO format
 export const getAdjustedTimestamp = () => {
-  const now = new Date();
-  now.setHours(now.getHours() + 2); // Add 2 hours for timezone
-  return now.toISOString();
+  return new Date().toISOString();
 };
 
 // Export the Firebase instance for use in other files
