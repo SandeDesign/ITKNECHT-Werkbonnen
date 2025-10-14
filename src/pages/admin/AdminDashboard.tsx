@@ -293,7 +293,7 @@ const AdminDashboard = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Link 
-                to="/dashboard/admin/werkbonnen?status=ready_to_send"
+                to="/dashboard/admin/werkbonnen?status=pending"
                 className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary-300 dark:hover:border-primary-700 transition-colors group"
               >
                 <div className="flex items-center space-x-3">
