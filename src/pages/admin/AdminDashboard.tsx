@@ -84,7 +84,7 @@ const AdminDashboard = () => {
       bgColor: 'bg-purple-100 dark:bg-purple-900/30'
     },
     {
-      title: 'Actieve Werknemers',
+      title: 'Werknemers',
       value: stats.activeUsers.toString(),
       icon: Users,
       color: 'text-orange-600',
