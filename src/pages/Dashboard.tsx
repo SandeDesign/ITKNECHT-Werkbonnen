@@ -169,7 +169,7 @@ const Dashboard = () => {
                   IT Knecht
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Werkbon Systeem
+                  
                 </p>
               </div>
             </div>
