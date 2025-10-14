@@ -241,7 +241,7 @@ const UserManagement = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Totaal Gebruikers</h3>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Totaal Werknemers</h3>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
                   {totalStats.totalUsers}
                 </p>
