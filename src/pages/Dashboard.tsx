@@ -91,7 +91,7 @@ const Dashboard = () => {
       href: isAdmin ? '/dashboard/admin' : '/dashboard', 
       icon: isAdmin ? LayoutDashboard : Home 
     },
-    { name: 'Nieuwe Werkbon', href: '/dashboard/create', icon: Plus, highlight: true },
+    { name: 'Werkbon', href: '/dashboard/create', icon: Plus, highlight: true },
     { name: 'Agenda', href: '/dashboard/calendar', icon: CalendarIcon },
     { name: 'Meer', action: 'menu', icon: MoreHorizontal }
   ];
