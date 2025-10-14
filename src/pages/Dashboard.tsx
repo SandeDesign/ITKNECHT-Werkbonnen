@@ -452,9 +452,8 @@ const Dashboard = () => {
           </>
         )}
 
-        <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 shadow-xl">
-          <div style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-            <div className="flex items-center justify-around h-16 px-2">
+        <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 shadow-xl pb-2">
+          <div className="flex items-center justify-around h-16 px-2">
               {mobileMainNav.map((item) => {
                 const Icon = item.icon;
                 const isActive = item.action !== 'menu' && isActiveLink(item.href);
@@ -541,7 +540,6 @@ const Dashboard = () => {
                 );
               })}
             </div>
-          </div>
         </div>
       </div>
       
