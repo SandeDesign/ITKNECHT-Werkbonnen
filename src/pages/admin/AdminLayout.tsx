@@ -43,7 +43,7 @@ const AdminLayout = () => {
       icon: BarChart3,
     },
     { 
-      name: 'Werknemers', 
+      name: 'Gebruikers', 
       href: '/dashboard/admin/gebruikers', 
       icon: Users,
     },
@@ -138,7 +138,7 @@ const AdminLayout = () => {
           <Route path="/" element={<AdminDashboard />} />
           <Route path="/werkbonnen" element={<WorkOrderManagement />} />
           <Route path="/statistieken" element={<StatisticsPanel />} />
-          <Route path="/Gebruik" element={<UserManagement />} />
+          <Route path="/gebruikers" element={<UserManagement />} />
           <Route path="/tasks" element={<AdminTasks />} />
           <Route path="*" element={<Navigate to="/dashboard/admin" replace />} />
         </Routes>
