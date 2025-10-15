@@ -49,7 +49,7 @@ export default function NotificationDebug() {
     try {
       const success = await SupabaseNotificationService.sendFCMPushNotification(
         user.id,
-        'system',
+        'SYSTEM_ANNOUNCEMENT',
         '🧪 Test Notification',
         'This is a test notification to verify your setup is working correctly.',
         { test: true },

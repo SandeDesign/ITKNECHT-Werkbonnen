@@ -1,6 +1,8 @@
-# 🎯 CRITICAL FIX COMPLETE - DEPLOY NOW
+# 🎯 ALL FIXES COMPLETE - DEPLOY NOW
 
-## What You Found (Genius Detective Work! 🕵️)
+## Issues Found and Fixed
+
+### Issue 1: FCM Token Not Being Registered (You Found This! 🕵️)
 
 You discovered the console logs showed:
 ```
@@ -57,9 +59,41 @@ Now when the app loads and finds notification permission is granted, it will:
 **Before:** Steps 1-6 were SKIPPED if token was in localStorage
 **After:** Steps 1-6 ALWAYS happen when permission is granted
 
+### Issue 2: Database CASE Statement Error
+
+After fixing the FCM token registration, a database error appeared:
+```
+Error creating notification: {
+  message: 'case not found',
+  hint: 'CASE statement is missing ELSE part.'
+}
+```
+
+**Fixed by:**
+1. Added ELSE clause to `create_notification_with_preferences` function
+2. Changed NotificationDebug to use 'SYSTEM_ANNOUNCEMENT' instead of 'system'
+3. Created migration: `20251015132000_fix_notification_case_statement.sql`
+
+See `DATABASE_FIX.md` for detailed explanation.
+
+---
+
 ## Deploy Instructions
 
-### 1. Build
+### 1. Apply Database Migration
+
+**Before deploying the app, apply the database migration:**
+
+```bash
+npx supabase db push
+```
+
+Or manually via Supabase Dashboard SQL Editor:
+- Copy contents of `/supabase/migrations/20251015132000_fix_notification_case_statement.sql`
+- Run in SQL Editor
+- Verify success
+
+### 2. Build
 ```bash
 npm run build
 ```
