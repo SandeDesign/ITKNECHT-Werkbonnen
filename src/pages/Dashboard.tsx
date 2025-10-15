@@ -45,6 +45,7 @@ import MyStatistics from './MyStatistics';
 import AdminLayout from './admin/AdminLayout';
 import WebmailModal from '../components/WebmailModal';
 import NotificationCenter from '../components/dashboard/NotificationCenter';
+import NotificationDebug from '../components/dashboard/NotificationDebug';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -380,6 +381,7 @@ const Dashboard = () => {
             </Route>
             <Route path="/admin/*" element={<AdminLayout />} />
             <Route path="/settings" element={<UserSettings />} />
+            <Route path="/notification-debug" element={<NotificationDebug />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>

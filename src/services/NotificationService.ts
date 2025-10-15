@@ -129,6 +129,17 @@ export class NotificationService {
   
   static async registerFCMToken(userId: string): Promise<string | null> {
     try {
+      console.log('🔔 Starting FCM token registration for user:', userId);
+
+      // Check if service worker is ready first
+      if ('serviceWorker' in navigator) {
+        const swReady = await navigator.serviceWorker.ready;
+        console.log('✅ Service Worker is ready:', swReady.active?.state);
+      } else {
+        console.error('❌ Service Worker not supported in this browser');
+        return null;
+      }
+
       // Check circuit breaker
       const circuitBreakerTime = localStorage.getItem(this.CIRCUIT_BREAKER_KEY);
       if (circuitBreakerTime) {
@@ -141,6 +152,7 @@ export class NotificationService {
           // Reset circuit breaker after timeout
           localStorage.removeItem(this.CIRCUIT_BREAKER_KEY);
           localStorage.removeItem(this.RETRY_COUNT_KEY);
+          console.log('✅ Circuit breaker reset');
         }
       }
 
@@ -193,18 +205,20 @@ export class NotificationService {
           }
 
           // FCM token ophalen
+          console.log('🔑 Requesting FCM token with VAPID key...');
           const token = await getToken(messaging, {
-            vapidKey: VAPID_KEY
+            vapidKey: VAPID_KEY,
+            serviceWorkerRegistration: await navigator.serviceWorker.ready
           });
 
           if (!token) {
-            console.log('No FCM token available');
+            console.log('❌ No FCM token available');
             // Increment retry count
             localStorage.setItem(this.RETRY_COUNT_KEY, (retryCount + 1).toString());
             return null;
           }
 
-          console.log('FCM token received:', token);
+          console.log('✅ FCM token received:', token.substring(0, 20) + '...');
 
           // Success - reset retry count
           localStorage.removeItem(this.RETRY_COUNT_KEY);
@@ -658,11 +672,68 @@ export class NotificationService {
           icon: '/icon-192.png'
         });
       }
-      
+
       return true;
     } catch (error) {
       console.error('Error simulating notification:', error);
       return false;
     }
+  }
+
+  // Get detailed debug information about notification setup
+  static async getDebugInfo(): Promise<Record<string, any>> {
+    const info: Record<string, any> = {
+      timestamp: new Date().toISOString(),
+      browser: navigator.userAgent,
+      notificationSupported: 'Notification' in window,
+      notificationPermission: 'Notification' in window ? Notification.permission : 'not supported',
+      serviceWorkerSupported: 'serviceWorker' in navigator,
+      pushManagerSupported: 'PushManager' in window,
+      deviceInfo: this.getDeviceInfo(),
+      storedToken: this.getStoredToken() ? 'present' : 'not found',
+      circuitBreakerActive: false,
+      lastRegistration: localStorage.getItem(this.LAST_REGISTRATION_KEY) || 'never',
+      retryCount: localStorage.getItem(this.RETRY_COUNT_KEY) || '0'
+    };
+
+    // Check circuit breaker status
+    const circuitBreakerTime = localStorage.getItem(this.CIRCUIT_BREAKER_KEY);
+    if (circuitBreakerTime) {
+      const now = Date.now();
+      const breakerTimestamp = parseInt(circuitBreakerTime);
+      if (now - breakerTimestamp < this.CIRCUIT_BREAKER_TIMEOUT) {
+        info.circuitBreakerActive = true;
+        info.circuitBreakerSecondsRemaining = Math.floor((this.CIRCUIT_BREAKER_TIMEOUT - (now - breakerTimestamp)) / 1000);
+      }
+    }
+
+    // Check service worker registration
+    if ('serviceWorker' in navigator) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        info.serviceWorkerRegistrations = registrations.length;
+        info.serviceWorkerStates = registrations.map(reg => ({
+          scope: reg.scope,
+          activeState: reg.active?.state,
+          installingState: reg.installing?.state,
+          waitingState: reg.waiting?.state
+        }));
+      } catch (error) {
+        info.serviceWorkerError = error instanceof Error ? error.message : 'unknown error';
+      }
+    }
+
+    return info;
+  }
+
+  // Clear all notification state (useful for debugging)
+  static clearAllState(): void {
+    localStorage.removeItem(this.FCM_TOKEN_KEY);
+    localStorage.removeItem(this.DEVICE_ID_KEY);
+    localStorage.removeItem(this.REGISTRATION_LOCK_KEY);
+    localStorage.removeItem(this.LAST_REGISTRATION_KEY);
+    localStorage.removeItem(this.RETRY_COUNT_KEY);
+    localStorage.removeItem(this.CIRCUIT_BREAKER_KEY);
+    console.log('🧹 All notification state cleared');
   }
 }
