@@ -1,5 +1,17 @@
 # PWA Notification System - Deployment & Testing Guide
 
+## 🚨 CRITICAL FIX APPLIED (FINAL)
+
+**THE ROOT CAUSE WAS FOUND AND FIXED!**
+
+The app was checking localStorage and saying "Valid token found" but **NEVER actually registering the FCM token with Firebase**. This meant no push notifications could ever be sent.
+
+**Fix:** Modified `autoEnableNotifications()` to ALWAYS call `registerFCMToken()` when permission is granted, ensuring Firebase receives the token registration.
+
+**See `CRITICAL_FIX_APPLIED.md` for detailed explanation.**
+
+---
+
 ## What Was Fixed
 
 ### 1. Service Worker Build Process

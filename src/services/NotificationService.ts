@@ -580,61 +580,51 @@ export class NotificationService {
 
   // Auto-enable notifications if permission is already granted
   static async autoEnableNotifications(userId: string): Promise<boolean> {
-    // Debounce: prevent rapid successive calls
-    const now = Date.now();
-    if (now - this.lastAutoEnableCall < this.AUTO_ENABLE_DEBOUNCE) {
-      console.log('⏳ autoEnableNotifications debounced - too many calls');
-      return false;
-    }
-    this.lastAutoEnableCall = now;
-
-    // Check circuit breaker
-    const circuitBreakerTime = localStorage.getItem(this.CIRCUIT_BREAKER_KEY);
-    if (circuitBreakerTime) {
-      const breakerTimestamp = parseInt(circuitBreakerTime);
-      if (Date.now() - breakerTimestamp < this.CIRCUIT_BREAKER_TIMEOUT) {
-        console.log('🚫 Circuit breaker is open - auto-enable blocked');
+    try {
+      // Debounce: prevent rapid successive calls
+      const now = Date.now();
+      if (now - this.lastAutoEnableCall < this.AUTO_ENABLE_DEBOUNCE) {
+        console.log('⏳ autoEnableNotifications debounced - too many calls');
         return false;
       }
-    }
+      this.lastAutoEnableCall = now;
 
-    if (Notification.permission === 'granted') {
-      console.log('🔔 Notification permission already granted, auto-enabling');
-
-      // Check if we already have a token
-      const storedToken = localStorage.getItem(this.FCM_TOKEN_KEY);
-      if (storedToken) {
-        // If we have a token, validate it
-        const userRef = doc(db, 'users', userId);
-        const userDoc = await getDoc(userRef);
-
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const fcmTokens = userData.fcmTokens || {};
-
-          // If token is valid, just update notificationsEnabled
-          if (fcmTokens[storedToken] === true) {
-            console.log('✅ Valid token found - notifications already enabled');
-            if (!userData.notificationsEnabled) {
-              await updateDoc(userRef, {
-                notificationsEnabled: true,
-                updatedAt: new Date().toISOString()
-              });
-            }
-            return true;
-          }
+      // Check circuit breaker
+      const circuitBreakerTime = localStorage.getItem(this.CIRCUIT_BREAKER_KEY);
+      if (circuitBreakerTime) {
+        const breakerTimestamp = parseInt(circuitBreakerTime);
+        if (Date.now() - breakerTimestamp < this.CIRCUIT_BREAKER_TIMEOUT) {
+          console.log('🚫 Circuit breaker is open - auto-enable blocked');
+          return false;
         }
       }
 
-      // If no token or invalid token, register a new one (with all safety checks)
-      console.log('🔄 No valid token found - attempting registration');
+      // CRITICAL: If permission is NOT granted, skip auto-enable
+      if (Notification.permission !== 'granted') {
+        console.log('🔔 Notification permission not granted, skipping auto-enable');
+        return false;
+      }
+
+      console.log('🔔 Notification permission already granted, registering FCM token');
+
+      // ALWAYS register a fresh FCM token with Firebase
+      // This ensures Firebase has an active registration for push notifications
+      // Don't trust localStorage cache - always get a fresh token
       const token = await this.registerFCMToken(userId);
+
       if (token) {
+        console.log('✅ FCM token registered:', token.substring(0, 20) + '...');
         localStorage.setItem(this.FCM_TOKEN_KEY, token);
         return true;
       }
+
+      console.log('❌ Failed to register FCM token');
+      return false;
+
+    } catch (error) {
+      console.error('❌ Error in autoEnableNotifications:', error);
+      return false;
     }
-    return false;
   }
   
   // Get the stored FCM token
