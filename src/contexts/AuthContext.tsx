@@ -64,6 +64,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Store unsubscribe function in a ref
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
+  // Track if notifications have been initialized to prevent duplicates
+  const notificationsInitialized = useRef(false);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
@@ -98,8 +101,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Sync Firebase user to Supabase for notifications
           syncUserToSupabase(firebaseUser.uid, firebaseUser.email || '', userData.name || 'User');
 
-          // Initialize notifications for the user
-          if (Notification.permission === 'granted') {
+          // Initialize notifications for the user (only once per session)
+          if (Notification.permission === 'granted' && !notificationsInitialized.current) {
+            notificationsInitialized.current = true;
             NotificationService.autoEnableNotifications(firebaseUser.uid);
           }
 
@@ -144,10 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = userDoc.data();
       await syncUserToSupabase(firebaseUser.uid, firebaseUser.email || '', userData.name || 'User');
 
-      // Initialize notifications after successful login
-      if (Notification.permission === 'granted') {
-        await NotificationService.autoEnableNotifications(firebaseUser.uid);
-      }
+      // Don't initialize notifications here - it will be handled by onAuthStateChanged
       
     } catch (error) {
       throw new Error('Invalid email or password');
@@ -185,10 +186,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
       }
-      
+
+      // Reset notification initialization flag
+      notificationsInitialized.current = false;
+
       // Clear FCM token from localStorage on logout
       localStorage.removeItem('itknecht_fcm_token');
-      
+      localStorage.removeItem('itknecht_device_id');
+
       await signOut(auth);
       setUser(null);
     } catch (error) {

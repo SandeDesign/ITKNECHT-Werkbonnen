@@ -72,6 +72,16 @@ const getDeviceName = (): string => {
 export class NotificationService {
   private static readonly FCM_TOKEN_KEY = 'itknecht_fcm_token';
   private static readonly DEVICE_ID_KEY = 'itknecht_device_id';
+  private static readonly REGISTRATION_LOCK_KEY = 'itknecht_registration_lock';
+  private static readonly LAST_REGISTRATION_KEY = 'itknecht_last_registration';
+  private static readonly RETRY_COUNT_KEY = 'itknecht_retry_count';
+  private static readonly CIRCUIT_BREAKER_KEY = 'itknecht_circuit_breaker';
+
+  private static isRegistering = false;
+  private static registrationPromise: Promise<string | null> | null = null;
+  private static readonly MAX_RETRIES = 3;
+  private static readonly COOLDOWN_MS = 10000; // 10 seconds
+  private static readonly CIRCUIT_BREAKER_TIMEOUT = 300000; // 5 minutes
 
   static async requestPermission(userId: string): Promise<boolean> {
     try {
@@ -119,71 +129,160 @@ export class NotificationService {
   
   static async registerFCMToken(userId: string): Promise<string | null> {
     try {
-      // In WebContainer, skip actual FCM token registration
-      if (isWebContainer) {
-        console.log('WebContainer environment - skipping FCM token registration');
-        return 'simulated-fcm-token-for-webcontainer';
+      // Check circuit breaker
+      const circuitBreakerTime = localStorage.getItem(this.CIRCUIT_BREAKER_KEY);
+      if (circuitBreakerTime) {
+        const breakerTimestamp = parseInt(circuitBreakerTime);
+        const now = Date.now();
+        if (now - breakerTimestamp < this.CIRCUIT_BREAKER_TIMEOUT) {
+          console.log('🚫 Circuit breaker is open - registration blocked for', Math.floor((this.CIRCUIT_BREAKER_TIMEOUT - (now - breakerTimestamp)) / 1000), 'seconds');
+          return null;
+        } else {
+          // Reset circuit breaker after timeout
+          localStorage.removeItem(this.CIRCUIT_BREAKER_KEY);
+          localStorage.removeItem(this.RETRY_COUNT_KEY);
+        }
       }
 
-      const app = getApp();
-      const messaging = getMessaging(app);
+      // Check if already registering - return existing promise
+      if (this.isRegistering && this.registrationPromise) {
+        console.log('🔒 Registration already in progress, waiting for completion');
+        return this.registrationPromise;
+      }
 
-      // FCM token ophalen
-      const token = await getToken(messaging, {
-        vapidKey: VAPID_KEY
-      });
+      // Check cooldown period
+      const lastRegistration = localStorage.getItem(this.LAST_REGISTRATION_KEY);
+      if (lastRegistration) {
+        const lastTime = parseInt(lastRegistration);
+        const timeSince = Date.now() - lastTime;
+        if (timeSince < this.COOLDOWN_MS) {
+          console.log('⏳ Cooldown active - wait', Math.floor((this.COOLDOWN_MS - timeSince) / 1000), 'seconds before retry');
+          return null;
+        }
+      }
 
-      if (!token) {
-        console.log('No FCM token available');
+      // Check retry count
+      const retryCount = parseInt(localStorage.getItem(this.RETRY_COUNT_KEY) || '0');
+      if (retryCount >= this.MAX_RETRIES) {
+        console.log('🚫 Max retries reached - opening circuit breaker');
+        localStorage.setItem(this.CIRCUIT_BREAKER_KEY, Date.now().toString());
         return null;
       }
 
-      console.log('FCM token received:', token);
+      // Set registration lock
+      this.isRegistering = true;
+      localStorage.setItem(this.REGISTRATION_LOCK_KEY, Date.now().toString());
+      localStorage.setItem(this.LAST_REGISTRATION_KEY, Date.now().toString());
 
-      // Store token in Firestore
-      const userRef = doc(db, 'users', userId);
-      const userDoc = await getDoc(userRef);
+      // Create promise for this registration
+      this.registrationPromise = (async () => {
+        try {
+          // In WebContainer, skip actual FCM token registration
+          if (isWebContainer) {
+            console.log('WebContainer environment - skipping FCM token registration');
+            return 'simulated-fcm-token-for-webcontainer';
+          }
 
-      if (userDoc.exists()) {
-        // Update existing user
-        await updateDoc(userRef, {
-          fcmTokens: {
-            [token]: true
-          },
-          notificationsEnabled: true,
-          updatedAt: new Date().toISOString(),
-          fcmToken: token,
-          fcmTokenUpdated: new Date().toISOString(),
-          isPWA: isPWAInstalled(),
-          deviceType: getDeviceType()
-        });
-      }
+          const app = getApp();
+          const messaging = getMessaging(app);
 
-      // Registreer device in Supabase via SupabaseNotificationService
-      try {
-        const deviceType = getDeviceType();
-        const deviceName = getDeviceName();
+          // Validate VAPID key before using it
+          if (!VAPID_KEY || VAPID_KEY.includes(' ')) {
+            console.error('❌ Invalid VAPID key - contains spaces or is empty');
+            throw new Error('INVALID_VAPID_KEY');
+          }
 
-        // Dynamisch importeren om circular dependency te voorkomen
-        const { SupabaseNotificationService } = await import('./SupabaseNotificationService');
-        const deviceId = await SupabaseNotificationService.registerFCMDevice(
-          userId,
-          token,
-          deviceType,
-          deviceName
-        );
+          // FCM token ophalen
+          const token = await getToken(messaging, {
+            vapidKey: VAPID_KEY
+          });
 
-        if (deviceId) {
-          localStorage.setItem(this.DEVICE_ID_KEY, deviceId);
-          console.log('Device registered in Supabase:', deviceId);
+          if (!token) {
+            console.log('No FCM token available');
+            // Increment retry count
+            localStorage.setItem(this.RETRY_COUNT_KEY, (retryCount + 1).toString());
+            return null;
+          }
+
+          console.log('FCM token received:', token);
+
+          // Success - reset retry count
+          localStorage.removeItem(this.RETRY_COUNT_KEY);
+          localStorage.removeItem(this.CIRCUIT_BREAKER_KEY);
+
+          // Store token in Firestore
+          const userRef = doc(db, 'users', userId);
+          const userDoc = await getDoc(userRef);
+
+          if (userDoc.exists()) {
+            // Update existing user
+            await updateDoc(userRef, {
+              fcmTokens: {
+                [token]: true
+              },
+              notificationsEnabled: true,
+              updatedAt: new Date().toISOString(),
+              fcmToken: token,
+              fcmTokenUpdated: new Date().toISOString(),
+              isPWA: isPWAInstalled(),
+              deviceType: getDeviceType()
+            });
+          }
+
+          // Registreer device in Supabase via SupabaseNotificationService
+          try {
+            const deviceType = getDeviceType();
+            const deviceName = getDeviceName();
+
+            // Dynamisch importeren om circular dependency te voorkomen
+            const { SupabaseNotificationService } = await import('./SupabaseNotificationService');
+            const deviceId = await SupabaseNotificationService.registerFCMDevice(
+              userId,
+              token,
+              deviceType,
+              deviceName
+            );
+
+            if (deviceId) {
+              localStorage.setItem(this.DEVICE_ID_KEY, deviceId);
+              console.log('Device registered in Supabase:', deviceId);
+            }
+          } catch (supabaseError) {
+            console.error('Error registering device in Supabase:', supabaseError);
+          }
+
+          return token;
+        } catch (innerError) {
+          console.error('Error in FCM token registration:', innerError);
+
+          // Increment retry count
+          localStorage.setItem(this.RETRY_COUNT_KEY, (retryCount + 1).toString());
+
+          // Check for fatal errors that should open circuit breaker immediately
+          if (innerError instanceof Error) {
+            if (innerError.message.includes('INVALID_VAPID_KEY') ||
+                innerError.message.includes('InvalidCharacterError') ||
+                innerError.name === 'InvalidCharacterError') {
+              console.error('🚫 Fatal error detected - opening circuit breaker immediately');
+              localStorage.setItem(this.CIRCUIT_BREAKER_KEY, Date.now().toString());
+            }
+          }
+
+          return null;
+        } finally {
+          // Always release the lock
+          this.isRegistering = false;
+          this.registrationPromise = null;
+          localStorage.removeItem(this.REGISTRATION_LOCK_KEY);
         }
-      } catch (supabaseError) {
-        console.error('Error registering device in Supabase:', supabaseError);
-      }
+      })();
 
-      return token;
+      return this.registrationPromise;
     } catch (error) {
       console.error('Error registering FCM token:', error);
+      this.isRegistering = false;
+      this.registrationPromise = null;
+      localStorage.removeItem(this.REGISTRATION_LOCK_KEY);
       return null;
     }
   }
@@ -252,31 +351,27 @@ export class NotificationService {
     try {
       const userRef = doc(db, 'users', userId);
       const userDoc = await getDoc(userRef);
-      
+
       if (!userDoc.exists()) {
         return { enabled: false, tokens: [] };
       }
-      
+
       const userData = userDoc.data();
-      
+
       // Check for stored token in localStorage
       const storedToken = localStorage.getItem(this.FCM_TOKEN_KEY);
-      
+
       const fcmTokens = userData.fcmTokens || {};
       const activeTokens = Object.entries(fcmTokens)
         .filter(([_, active]) => active)
         .map(([token]) => token);
-      
-      // If we have a stored token but it's not in Firestore, update Firestore
-      if (storedToken && !activeTokens.includes(storedToken) && userData.notificationsEnabled !== false) {
-        this.registerFCMToken(userId);
-      }
-      
-      // If we have active tokens in Firestore but none in localStorage, store the first one
+
+      // DO NOT trigger registerFCMToken here - this causes infinite loops
+      // Just sync localStorage with Firestore state
       if (!storedToken && activeTokens.length > 0) {
         localStorage.setItem(this.FCM_TOKEN_KEY, activeTokens[0]);
       }
-      
+
       return {
         enabled: userData.notificationsEnabled || false,
         tokens: activeTokens
@@ -464,24 +559,48 @@ export class NotificationService {
     return 'Notification' in window && 'serviceWorker' in navigator;
   }
   
+  // Debounced version of autoEnableNotifications
+  private static autoEnableTimeout: NodeJS.Timeout | null = null;
+  private static lastAutoEnableCall = 0;
+  private static readonly AUTO_ENABLE_DEBOUNCE = 5000; // 5 seconds
+
   // Auto-enable notifications if permission is already granted
   static async autoEnableNotifications(userId: string): Promise<boolean> {
+    // Debounce: prevent rapid successive calls
+    const now = Date.now();
+    if (now - this.lastAutoEnableCall < this.AUTO_ENABLE_DEBOUNCE) {
+      console.log('⏳ autoEnableNotifications debounced - too many calls');
+      return false;
+    }
+    this.lastAutoEnableCall = now;
+
+    // Check circuit breaker
+    const circuitBreakerTime = localStorage.getItem(this.CIRCUIT_BREAKER_KEY);
+    if (circuitBreakerTime) {
+      const breakerTimestamp = parseInt(circuitBreakerTime);
+      if (Date.now() - breakerTimestamp < this.CIRCUIT_BREAKER_TIMEOUT) {
+        console.log('🚫 Circuit breaker is open - auto-enable blocked');
+        return false;
+      }
+    }
+
     if (Notification.permission === 'granted') {
       console.log('🔔 Notification permission already granted, auto-enabling');
-      
+
       // Check if we already have a token
       const storedToken = localStorage.getItem(this.FCM_TOKEN_KEY);
       if (storedToken) {
         // If we have a token, validate it
         const userRef = doc(db, 'users', userId);
         const userDoc = await getDoc(userRef);
-        
+
         if (userDoc.exists()) {
           const userData = userDoc.data();
           const fcmTokens = userData.fcmTokens || {};
-          
+
           // If token is valid, just update notificationsEnabled
           if (fcmTokens[storedToken] === true) {
+            console.log('✅ Valid token found - notifications already enabled');
             if (!userData.notificationsEnabled) {
               await updateDoc(userRef, {
                 notificationsEnabled: true,
@@ -492,8 +611,9 @@ export class NotificationService {
           }
         }
       }
-      
-      // If no token or invalid token, register a new one
+
+      // If no token or invalid token, register a new one (with all safety checks)
+      console.log('🔄 No valid token found - attempting registration');
       const token = await this.registerFCMToken(userId);
       if (token) {
         localStorage.setItem(this.FCM_TOKEN_KEY, token);

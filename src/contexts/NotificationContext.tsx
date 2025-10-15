@@ -46,27 +46,22 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   // Initialize notifications when user logs in
   useEffect(() => {
     if (!user?.id) return;
-    
+
     // Check if notifications should be enabled
     const checkNotificationStatus = async () => {
       try {
-        // Check if permission is already granted
-        if (Notification.permission === 'granted') {
-          const success = await NotificationService.autoEnableNotifications(user.id);
-          setNotificationsEnabled(success);
-        } else {
-          // Check if we have stored settings
-          const settings = await NotificationService.getUserNotificationSettings(user.id);
-          setNotificationsEnabled(settings.enabled);
-        }
-        
+        // ONLY check stored settings - do NOT trigger autoEnableNotifications
+        // AuthContext will handle the initialization
+        const settings = await NotificationService.getUserNotificationSettings(user.id);
+        setNotificationsEnabled(settings.enabled);
+
         // Setup message listener for foreground notifications
         NotificationService.setupMessageListener();
       } catch (error) {
         console.error('Error checking notification status:', error);
       }
     };
-    
+
     checkNotificationStatus();
     
     // In WebContainer, listen for notifications from Firestore instead of FCM
