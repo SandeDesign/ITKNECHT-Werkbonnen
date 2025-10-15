@@ -78,13 +78,11 @@ const UserSettings = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       showMessage('error', 'Selecteer een geldig afbeeldingsbestand');
       return;
     }
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       showMessage('error', 'Afbeelding moet kleiner zijn dan 2MB');
       return;
@@ -93,13 +91,11 @@ const UserSettings = () => {
     setIsUploadingImage(true);
 
     try {
-      // Convert to base64
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64String = reader.result as string;
         setPreviewImage(base64String);
         
-        // Update user profile with new avatar
         try {
           await updateUser({ avatar: base64String });
           showMessage('success', 'Profielfoto bijgewerkt');
@@ -218,14 +214,7 @@ const UserSettings = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-8">
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white"></h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1"></p>
-      </div>
-
-      {/* Profile Section */}
+    <div className="max-w-4xl mx-auto space-y-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -241,7 +230,6 @@ const UserSettings = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <form onSubmit={handleProfileSubmit(handleProfileUpdate)} className="space-y-6">
-              {/* Avatar Upload */}
               <div className="flex items-start gap-6">
                 <div className="relative">
                   <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 flex items-center justify-center overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg">
@@ -293,7 +281,6 @@ const UserSettings = () => {
                 </div>
               </div>
 
-              {/* Form Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="Naam"
@@ -361,7 +348,6 @@ const UserSettings = () => {
         </Card>
       </motion.div>
 
-      {/* Password Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -411,7 +397,6 @@ const UserSettings = () => {
         </Card>
       </motion.div>
 
-      {/* Notifications Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -427,7 +412,6 @@ const UserSettings = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-6">
-              {/* Push Notifications Toggle */}
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
                 <div className="flex-1">
                   <h4 className="text-sm font-medium text-gray-900 dark:text-white">Push Notificaties</h4>
@@ -449,7 +433,6 @@ const UserSettings = () => {
                 </Button>
               </div>
 
-              {/* Notification Types */}
               <div className="space-y-1">
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Notificatie Types</h4>
 
@@ -480,7 +463,6 @@ const UserSettings = () => {
                 ))}
               </div>
 
-              {/* Quiet Hours */}
               <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Stille Uren</h4>
                 <p className="text-xs text-gray-500 mb-4">Geen notificaties tijdens deze uren</p>
@@ -526,7 +508,6 @@ const UserSettings = () => {
         </Card>
       </motion.div>
 
-      {/* App Installation */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -551,7 +532,6 @@ const UserSettings = () => {
         </Card>
       </motion.div>
 
-      {/* Logout */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -577,14 +557,13 @@ const UserSettings = () => {
         </Card>
       </motion.div>
 
-      {/* Toast Message */}
       <AnimatePresence>
         {message && (
           <motion.div
             initial={{ opacity: 0, y: 50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed bottom-4 right-4 z-50"
+            className="fixed bottom-24 lg:bottom-4 right-4 z-50"
           >
             <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
               message.type === 'success' 
