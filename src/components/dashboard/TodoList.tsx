@@ -7,7 +7,8 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { Plus, Trash2, Clock, MapPin, FileText, CheckCircle2, Circle, Calendar, Filter, X, ChevronLeft, ChevronRight, Edit2, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { NotificationService } from '../../services/NotificationService';
+import { SupabaseNotificationService } from '../../services/SupabaseNotificationService';
+import { collection as firestoreCollection, query as firestoreQuery, where as firestoreWhere, getDocs as firestoreGetDocs } from 'firebase/firestore';
 import TaskFeedbackModal from '../TaskFeedbackModal';
 
 interface Todo {
@@ -221,28 +222,24 @@ const TodoList = ({ showAll = false, showAddForm: externalShowAddForm, onShowAdd
         });
       } else {
         // Create new todo
-        await addDoc(collection(db, 'todos'), todoData);
+        const docRef = await addDoc(collection(db, 'todos'), todoData);
 
         // Create notification for assigned user if it's not self-assigned
         if (assignedTo !== user.id) {
-          // Simulate a notification in WebContainer environment
-          if (typeof window !== 'undefined' && window.location.hostname.includes('webcontainer')) {
-            await NotificationService.simulateNotification(
-              assignedTo,
-              'Nieuwe taak toegewezen',
-              `Er is een nieuwe taak aan je toegewezen: ${formData.description}`
-            );
-          }
-          
-          const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-          const newNotification = {
-            id: Date.now(),
-            title: 'Nieuwe taak toegewezen',
-            message: `Er is een nieuwe taak aan je toegewezen: ${formData.description}`,
-            timestamp,
-            read: false
-          };
-          localStorage.setItem('notifications', JSON.stringify([newNotification, ...notifications]));
+          await SupabaseNotificationService.createNotification(
+            assignedTo,
+            'TASK_ASSIGNED',
+            'Nieuwe taak toegewezen',
+            `${user.name} heeft je een taak toegewezen: ${formData.description}`,
+            {
+              task_id: docRef.id,
+              assigned_by: user.name,
+              assigned_by_id: user.id,
+              due_date: formData.dueDate,
+              due_time: formData.dueTime
+            },
+            '/dashboard/taken'
+          );
         }
       }
 
@@ -349,6 +346,34 @@ const TodoList = ({ showAll = false, showAddForm: externalShowAddForm, onShowAdd
       const todo = todos.find(t => t.id === todoId);
       const todoRef = doc(db, 'todos', todoId);
       await updateDoc(todoRef, { completed: !completed });
+
+      // Send notification to admins when task is completed by non-admin
+      if (todo && !completed && user?.role !== 'admin') {
+        try {
+          const usersRef = firestoreCollection(db, 'users');
+          const adminQuery = firestoreQuery(usersRef, firestoreWhere('role', '==', 'admin'));
+          const adminSnapshot = await firestoreGetDocs(adminQuery);
+          const adminIds = adminSnapshot.docs.map(doc => doc.id);
+
+          if (adminIds.length > 0) {
+            await SupabaseNotificationService.sendNotificationToAdmins(
+              adminIds,
+              'TASK_COMPLETED',
+              'Taak voltooid',
+              `${user.name} heeft een taak voltooid: ${todo.description}`,
+              {
+                task_id: todoId,
+                completed_by: user.name,
+                completed_by_id: user.id,
+                task_description: todo.description
+              },
+              '/dashboard/taken'
+            );
+          }
+        } catch (error) {
+          console.error('Error sending completion notification:', error);
+        }
+      }
 
       // Create recurring task if needed
       if (todo && !completed && todo.isRecurring && todo.recurringType === 'on_completion') {

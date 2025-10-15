@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNotifications } from '../../contexts/NotificationContext';
-import { NotificationService } from '../../services/NotificationService';
+import { useSupabaseNotifications } from '../../contexts/SupabaseNotificationContext';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '../ui/Card';
 import { motion } from 'framer-motion';
 import Button from '../ui/Button';
@@ -35,10 +34,10 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 const UserSettings = () => {
   const { user, updateUser, logout } = useAuth();
-  const { notificationsEnabled, toggleNotifications } = useNotifications();
+  const { preferences, updatePreferences, requestBrowserPermission, browserPermissionStatus } = useSupabaseNotifications();
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isPasswordLoading, setIsPasswordLoading] = useState(false); 
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
 
   const { register: registerProfile, handleSubmit: handleProfileSubmit, formState: { errors: profileErrors }, control } = useForm<NameEmailFormValues>({
@@ -109,21 +108,67 @@ const UserSettings = () => {
     }
   };
 
-  const handleToggleNotifications = async () => {
+  const handleTogglePushNotifications = async () => {
     if (!user?.id) return;
-    
+
     setIsNotificationLoading(true);
     try {
-      const success = await toggleNotifications(!notificationsEnabled);
-      if (success) {
-        setMessage(notificationsEnabled ? 'Notificaties uitgeschakeld' : 'Notificaties ingeschakeld');
+      if (preferences?.push_notifications_enabled) {
+        const success = await updatePreferences({ push_notifications_enabled: false });
+        if (success) {
+          setMessage('Push notificaties uitgeschakeld');
+        }
       } else {
-        setMessage('Fout bij het wijzigen van notificatie-instellingen');
+        const granted = await requestBrowserPermission();
+        if (granted) {
+          setMessage('Push notificaties ingeschakeld');
+        } else {
+          setMessage('Browser permissie geweigerd');
+        }
       }
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      console.error('Error toggling notifications:', error);
+      console.error('Error toggling push notifications:', error);
       setMessage('Fout bij het wijzigen van notificatie-instellingen');
+    } finally {
+      setIsNotificationLoading(false);
+    }
+  };
+
+  const handleToggleNotificationType = async (type: keyof typeof preferences, value: boolean) => {
+    if (!user?.id) return;
+
+    setIsNotificationLoading(true);
+    try {
+      const success = await updatePreferences({ [type]: value });
+      if (success) {
+        setMessage('Notificatie voorkeuren bijgewerkt');
+        setTimeout(() => setMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error updating notification preference:', error);
+      setMessage('Fout bij het bijwerken van voorkeuren');
+    } finally {
+      setIsNotificationLoading(false);
+    }
+  };
+
+  const handleQuietHoursChange = async (start: string | null, end: string | null) => {
+    if (!user?.id) return;
+
+    setIsNotificationLoading(true);
+    try {
+      const success = await updatePreferences({
+        quiet_hours_start: start,
+        quiet_hours_end: end
+      });
+      if (success) {
+        setMessage('Stille uren bijgewerkt');
+        setTimeout(() => setMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error updating quiet hours:', error);
+      setMessage('Fout bij het bijwerken van stille uren');
     } finally {
       setIsNotificationLoading(false);
     }
@@ -275,52 +320,183 @@ const UserSettings = () => {
               <BellRing className={`h-5 w-5 text-amber-500`} />
               <span>Notificatie Instellingen</span>
             </CardTitle>
+            <CardDescription>Beheer welke notificaties je wilt ontvangen</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">Email Notificaties</h4>
-                  <p className="text-sm text-gray-500">Ontvang updates over je account via email</p>
+            <div className="space-y-6">
+              <div className="pb-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">Push Notificaties</h4>
+                    <p className="text-sm text-gray-500">Ontvang browser meldingen op desktop en mobiel</p>
+                    {browserPermissionStatus === 'denied' && (
+                      <p className="text-xs text-error-600 mt-1">
+                        Browser permissie geweigerd. Check je browser instellingen.
+                      </p>
+                    )}
+                    {browserPermissionStatus === 'unsupported' && (
+                      <p className="text-xs text-error-600 mt-1">
+                        Je browser ondersteunt geen notificaties
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    variant={preferences?.push_notifications_enabled ? "primary" : "outline"}
+                    size="sm"
+                    onClick={handleTogglePushNotifications}
+                    isLoading={isNotificationLoading}
+                    disabled={browserPermissionStatus === 'unsupported'}
+                  >
+                    {preferences?.push_notifications_enabled ? "Ingeschakeld" : "Inschakelen"}
+                  </Button>
                 </div>
-                <Button
-                  variant={notificationsEnabled ? "primary" : "outline"}
-                  size="sm"
-                  onClick={handleToggleNotifications}
-                  isLoading={isNotificationLoading}
-                >
-                  {notificationsEnabled ? "Ingeschakeld" : "Inschakelen"}
-                </Button>
               </div>
-              
-              <div className="flex items-center justify-between mt-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">Push Notificaties</h4>
-                  <p className="text-sm text-gray-500">Ontvang meldingen over taken en werkbonnen</p>
+
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Notificatie Types</h4>
+
+                <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Nieuwe Taken</p>
+                    <p className="text-xs text-gray-500">Melding wanneer een taak aan je wordt toegewezen</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={preferences?.task_assigned_enabled ?? true}
+                      onChange={(e) => handleToggleNotificationType('task_assigned_enabled', e.target.checked)}
+                      className="sr-only peer"
+                      disabled={isNotificationLoading}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
+                  </label>
                 </div>
-                <Button
-                  variant={notificationsEnabled ? "primary" : "outline"}
-                  size="sm"
-                  onClick={handleToggleNotifications}
-                  isLoading={isNotificationLoading}
-                  disabled={!NotificationService.isNotificationSupported()}
-                >
-                  {notificationsEnabled ? "Ingeschakeld" : "Inschakelen"}
-                </Button>
-                {!NotificationService.isNotificationSupported() && (
-                  <p className="text-xs text-error-600 mt-1">
-                    Je browser ondersteunt geen notificaties
-                  </p>
+
+                <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Voltooide Taken</p>
+                    <p className="text-xs text-gray-500">Melding wanneer een taak is voltooid (alleen admins)</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={preferences?.task_completed_enabled ?? true}
+                      onChange={(e) => handleToggleNotificationType('task_completed_enabled', e.target.checked)}
+                      className="sr-only peer"
+                      disabled={isNotificationLoading}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Werkbon Updates</p>
+                    <p className="text-xs text-gray-500">Melding bij werkbon statuswijzigingen</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={preferences?.workorder_status_enabled ?? true}
+                      onChange={(e) => handleToggleNotificationType('workorder_status_enabled', e.target.checked)}
+                      className="sr-only peer"
+                      disabled={isNotificationLoading}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Feedback Ontvangen</p>
+                    <p className="text-xs text-gray-500">Melding wanneer feedback op je taak wordt geplaatst</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={preferences?.feedback_enabled ?? true}
+                      onChange={(e) => handleToggleNotificationType('feedback_enabled', e.target.checked)}
+                      className="sr-only peer"
+                      disabled={isNotificationLoading}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Systeem Aankondigingen</p>
+                    <p className="text-xs text-gray-500">Belangrijke mededelingen van de beheerder</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={preferences?.system_announcements_enabled ?? true}
+                      onChange={(e) => handleToggleNotificationType('system_announcements_enabled', e.target.checked)}
+                      className="sr-only peer"
+                      disabled={isNotificationLoading}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between py-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Notificatie Geluid</p>
+                    <p className="text-xs text-gray-500">Speel geluid af bij nieuwe notificaties</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={preferences?.notification_sound_enabled ?? true}
+                      onChange={(e) => handleToggleNotificationType('notification_sound_enabled', e.target.checked)}
+                      className="sr-only peer"
+                      disabled={isNotificationLoading}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Stille Uren</h4>
+                <p className="text-xs text-gray-500 mb-3">Geen notificaties tijdens deze uren</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Start tijd
+                    </label>
+                    <input
+                      type="time"
+                      value={preferences?.quiet_hours_start || ''}
+                      onChange={(e) => handleQuietHoursChange(e.target.value || null, preferences?.quiet_hours_end || null)}
+                      className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border rounded-lg border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                      disabled={isNotificationLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Eind tijd
+                    </label>
+                    <input
+                      type="time"
+                      value={preferences?.quiet_hours_end || ''}
+                      onChange={(e) => handleQuietHoursChange(preferences?.quiet_hours_start || null, e.target.value || null)}
+                      className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border rounded-lg border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                      disabled={isNotificationLoading}
+                    />
+                  </div>
+                </div>
+                {preferences?.quiet_hours_start && preferences?.quiet_hours_end && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleQuietHoursChange(null, null)}
+                  >
+                    Stille uren verwijderen
+                  </Button>
                 )}
               </div>
-              
-              {notificationsEnabled && (
-                <div className="mt-4 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
-                  <p className="text-sm text-primary-700 dark:text-primary-300">
-                    Notificaties zijn ingeschakeld. Je ontvangt meldingen over nieuwe taken en updates.
-                  </p>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>

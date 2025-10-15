@@ -7,7 +7,7 @@ import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import ScrollToTop from './components/ui/ScrollToTop';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { NotificationProvider } from './contexts/NotificationContext';
+import { SupabaseNotificationProvider } from './contexts/SupabaseNotificationContext';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -15,9 +15,9 @@ createRoot(document.getElementById('root')!).render(
       <ScrollToTop />
       <ThemeProvider>
         <AuthProvider>
-          <NotificationProvider>
+          <SupabaseNotificationProvider>
             <App />
-          </NotificationProvider>
+          </SupabaseNotificationProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
