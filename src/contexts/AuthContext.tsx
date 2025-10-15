@@ -14,6 +14,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { NotificationService } from '../services/NotificationService';
+import { supabase } from '../lib/supabase';
 
 export interface User {
   id: string;
@@ -39,6 +40,22 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+// Helper function to sync Firebase user to Supabase
+const syncUserToSupabase = async (userId: string, email: string, name: string) => {
+  try {
+    await supabase.from('users').upsert({
+      user_id: userId,
+      email,
+      name,
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'user_id'
+    });
+  } catch (error) {
+    console.error('Failed to sync user to Supabase:', error);
+  }
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -77,12 +94,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             projects: userData.projects || [],
             avatar: userData.avatar
           });
-          
+
+          // Sync Firebase user to Supabase for notifications
+          syncUserToSupabase(firebaseUser.uid, firebaseUser.email || '', userData.name || 'User');
+
           // Initialize notifications for the user
           if (Notification.permission === 'granted') {
             NotificationService.autoEnableNotifications(firebaseUser.uid);
           }
-          
+
           setLoaded(true);
         });
       } else {
@@ -120,6 +140,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('User data not found');
       }
       
+      // Sync user to Supabase
+      const userData = userDoc.data();
+      await syncUserToSupabase(firebaseUser.uid, firebaseUser.email || '', userData.name || 'User');
+
       // Initialize notifications after successful login
       if (Notification.permission === 'granted') {
         await NotificationService.autoEnableNotifications(firebaseUser.uid);
@@ -146,6 +170,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       };
 
       await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+
+      // Sync new user to Supabase
+      await syncUserToSupabase(firebaseUser.uid, email, name);
     } catch (error) {
       throw new Error('Failed to create account');
     }
