@@ -77,37 +77,6 @@ const AdminLayout = () => {
 
   return (
     <div className="space-y-6">
-      {/* Admin Navigation Cards - Only show on main admin page */}
-      {currentPath === '/dashboard/admin' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-        >
-          {adminNavigation.slice(1).map((nav, index) => (
-            <motion.div
-              key={nav.href}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Link to={nav.href}>
-                <div className="p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-700 transition-all hover:shadow-md group">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg group-hover:bg-primary-200 dark:group-hover:bg-primary-900/50 transition-colors">
-                      <nav.icon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-                      {nav.name}
-                    </h3>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
-
       {/* Sub-navigation for specific sections */}
       {currentNav && currentNav.subItems && currentPath !== '/dashboard/admin' && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
