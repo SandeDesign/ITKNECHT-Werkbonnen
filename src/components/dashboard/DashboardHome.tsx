@@ -4,7 +4,7 @@ import Button from '../ui/Button';
 import { Plus, MessageSquarePlus, X, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useSupabaseNotifications } from '../../contexts/SupabaseNotificationContext';
 import { useState, useEffect } from 'react';
 
 interface AdminMessage {
@@ -27,7 +27,7 @@ interface NewsItem {
 
 const DashboardHome = () => {
   const { user } = useAuth();
-  const { notificationsEnabled, requestPermission } = useNotifications();
+  const { preferences, requestBrowserPermission, browserPermissionStatus } = useSupabaseNotifications();
 
 const [newsItems, setNewsItems] = useState<NewsItem[]>(() => {
     const saved = localStorage.getItem('newsItems');
@@ -105,7 +105,7 @@ return (
               Laten we er samen een productieve dag van maken! 💪
             </p>
             
-            {!notificationsEnabled && (
+            {browserPermissionStatus !== 'granted' && browserPermissionStatus !== 'unsupported' && (
               <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
                 <div className="flex items-start">
                   <Bell className="h-5 w-5 text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
@@ -120,7 +120,7 @@ return (
                       variant="primary"
                       size="sm"
                       className="mt-2"
-                      onClick={() => requestPermission()}
+                      onClick={() => requestBrowserPermission()}
                     >
                       Inschakelen
                     </Button>

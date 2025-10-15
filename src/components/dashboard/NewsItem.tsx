@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, Bell, BellOff, Edit2, Trash2 } from 'lucide-react';
 import Button from '../ui/Button';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useSupabaseNotifications } from '../../contexts/SupabaseNotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface NewsItemProps {
@@ -18,13 +18,13 @@ interface NewsItemProps {
 
 const NewsItem = ({ id, title, content, priority, expiresAt, createdAt, onEdit, onDelete }: NewsItemProps) => {
   const { user } = useAuth();
-  const { notificationsEnabled, requestPermission } = useNotifications();
+  const { preferences, requestBrowserPermission, browserPermissionStatus } = useSupabaseNotifications();
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(
-    priority === 'high' && !notificationsEnabled
+    priority === 'high' && browserPermissionStatus !== 'granted'
   );
 
   const handleEnableNotifications = async () => {
-    const success = await requestPermission();
+    const success = await requestBrowserPermission();
     if (success) {
       setShowNotificationPrompt(false);
     }

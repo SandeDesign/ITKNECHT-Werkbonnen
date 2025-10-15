@@ -1,10 +1,10 @@
 // src/components/layout/MobileBottomBar.tsx
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  Home, 
-  Plus, 
-  ClipboardList, 
+import {
+  Home,
+  Plus,
+  ClipboardList,
   Calendar as CalendarIcon,
   MoreHorizontal,
   Users,
@@ -17,7 +17,7 @@ import {
   CheckSquare
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useSupabaseNotifications } from '../../contexts/SupabaseNotificationContext';
 
 interface MobileBottomBarProps {
   className?: string;
@@ -26,7 +26,7 @@ interface MobileBottomBarProps {
 const MobileBottomBar: React.FC<MobileBottomBarProps> = ({ className = "" }) => {
   const location = useLocation();
   const { user } = useAuth();
-  const { notificationCount } = useNotifications();
+  const { unreadCount } = useSupabaseNotifications();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Primaire acties (altijd zichtbaar)
@@ -235,10 +235,10 @@ const MobileBottomBar: React.FC<MobileBottomBarProps> = ({ className = "" }) => 
                 aria-label="Meer opties"
               >
                 {/* Notificatie badge */}
-                {notificationCount > 0 && (
+                {unreadCount > 0 && (
                   <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                     <span className="text-xs font-bold text-white">
-                      {notificationCount > 9 ? '9+' : notificationCount}
+                      {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   </div>
                 )}

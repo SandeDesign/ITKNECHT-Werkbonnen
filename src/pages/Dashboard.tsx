@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Routes, Route, Navigate, useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { NotificationProvider, useNotifications } from '../contexts/NotificationContext';
+import { useSupabaseNotifications } from '../contexts/SupabaseNotificationContext';
 import { 
   LayoutDashboard, 
   Settings, 
@@ -48,7 +48,7 @@ import NotificationCenter from '../components/dashboard/NotificationCenter';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
-  const { notificationCount } = useNotifications();
+  const { unreadCount } = useSupabaseNotifications();
   const navigate = useNavigate();
   const [showWebmailModal, setShowWebmailModal] = useState(false);
   const [webmailUrl, setWebmailUrl] = useState('');
@@ -470,10 +470,10 @@ const Dashboard = () => {
                             : 'text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
                         }`}
                       >
-                        {notificationCount > 0 && (
+                        {unreadCount > 0 && (
                           <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
                             <span className="text-xs font-bold text-white">
-                              {notificationCount > 9 ? '9+' : notificationCount}
+                              {unreadCount > 9 ? '9+' : unreadCount}
                             </span>
                           </div>
                         )}

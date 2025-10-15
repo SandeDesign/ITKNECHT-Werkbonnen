@@ -6,7 +6,7 @@ import { db } from '../../lib/firebase';
 import Button from '../ui/Button';
 import { Plus, MessageSquarePlus, X, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useSupabaseNotifications } from '../../contexts/SupabaseNotificationContext';
 import NewsItem from './NewsItem';
 import { NotificationService } from '../../services/NotificationService';
 
@@ -21,7 +21,7 @@ interface AdminMessage {
 
 const DashboardNews = () => {
   const { user } = useAuth();
-  const { addNotification } = useNotifications(); 
+  const { refreshNotifications } = useSupabaseNotifications(); 
   
   const [editingNewsItem, setEditingNewsItem] = useState<AdminMessage | null>(null);
   const [newsItems, setNewsItems] = useState<AdminMessage[]>([]);
@@ -79,19 +79,13 @@ const DashboardNews = () => {
                 );
               }
               
-              // Add to notifications
-              addNotification({
-                id: Date.now(), // Use timestamp for notification ID
-                title: 'Nieuwe belangrijke update',
-                message: item.title,
-                timestamp: new Date().toISOString(),
-                read: false
-              });
-              
+              // Trigger notification refresh
+              refreshNotifications();
+
               // Mark as processed
               newProcessed.push(item.id);
             });
-            
+
             // Update processed notifications
             setProcessedNotifications(newProcessed);
             localStorage.setItem('processedNewsNotifications', JSON.stringify(newProcessed));
@@ -103,12 +97,12 @@ const DashboardNews = () => {
         setError('Fout bij laden van nieuws');
       }
     );
-    
+
     // Clean up listener on unmount
     return () => {
       unsubscribe();
     };
-  }, [addNotification, processedNotifications, user?.id]);
+  }, [refreshNotifications, processedNotifications, user?.id]);
 
   const handleAddNews = async (e: React.FormEvent) => {
     e.preventDefault();
