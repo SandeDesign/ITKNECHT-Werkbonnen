@@ -2,8 +2,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { CalendarEvent } from '../../types/calendar';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { useAuth } from '../../contexts/AuthContext';
+import TaskCompletionModal, { CompletionStatus } from '../TaskCompletionModal';
+import { SupabaseNotificationService } from '../../services/SupabaseNotificationService';
 
 interface TodayTaskListProps {
   events: CalendarEvent[];
@@ -11,7 +14,11 @@ interface TodayTaskListProps {
 }
 
 const TodayTaskList = ({ events, onEventClick }: TodayTaskListProps) => {
+  const { user } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<CalendarEvent | null>(null);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
@@ -24,13 +31,71 @@ const TodayTaskList = ({ events, onEventClick }: TodayTaskListProps) => {
 
   const handleToggleComplete = async (event: CalendarEvent, e: React.MouseEvent) => {
     e.stopPropagation();
+    setSelectedTask(event);
+    setShowCompletionModal(true);
+  };
+
+  const handleCompleteTask = async (status: CompletionStatus, notes?: string) => {
+    if (!selectedTask || !user) return;
+
+    setIsCompleting(true);
     try {
-      const todoRef = doc(db, 'todos', event.id);
-      await updateDoc(todoRef, {
-        completed: !event.completed
-      });
+      const completionData: any = {
+        completed: true,
+        completionStatus: status,
+        completedAt: new Date().toISOString(),
+        completedBy: user.id
+      };
+
+      if (notes) {
+        completionData.completionNotes = notes;
+      }
+
+      const todoRef = doc(db, 'todos', selectedTask.id);
+      await updateDoc(todoRef, completionData);
+
+      if (user.role !== 'admin') {
+        try {
+          const usersRef = collection(db, 'users');
+          const adminQuery = query(usersRef, where('role', '==', 'admin'));
+          const adminSnapshot = await getDocs(adminQuery);
+          const adminIds = adminSnapshot.docs.map(doc => doc.id);
+
+          if (adminIds.length > 0) {
+            const statusLabel =
+              status === 'completed' ? 'succesvol voltooid' :
+              status === 'completed_with_issues' ? 'voltooid met problemen' :
+              'mislukt';
+
+            const notificationBody = notes
+              ? `${user.name} heeft een taak ${statusLabel}: ${selectedTask.title}\n\nNotities: ${notes}`
+              : `${user.name} heeft een taak ${statusLabel}: ${selectedTask.title}`;
+
+            await SupabaseNotificationService.sendNotificationToAdmins(
+              adminIds,
+              'TASK_COMPLETED',
+              `Taak ${statusLabel}`,
+              notificationBody,
+              {
+                task_id: selectedTask.id,
+                completed_by: user.name,
+                completed_by_id: user.id,
+                task_description: selectedTask.title,
+                completion_status: status,
+                completion_notes: notes
+              },
+              '/dashboard/taken'
+            );
+          }
+        } catch (error) {
+          console.error('Error sending completion notification:', error);
+        }
+      }
     } catch (error) {
-      console.error('Error updating task:', error);
+      console.error('Error completing task:', error);
+      throw error;
+    } finally {
+      setIsCompleting(false);
     }
   };
 
@@ -140,6 +205,17 @@ const TodayTaskList = ({ events, onEventClick }: TodayTaskListProps) => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <TaskCompletionModal
+        isOpen={showCompletionModal}
+        onClose={() => {
+          setShowCompletionModal(false);
+          setSelectedTask(null);
+        }}
+        onComplete={handleCompleteTask}
+        taskTitle={selectedTask?.title || ''}
+        isLoading={isCompleting}
+      />
     </motion.div>
   );
 };

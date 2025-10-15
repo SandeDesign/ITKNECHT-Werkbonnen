@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { SupabaseNotificationService } from '../services/SupabaseNotificationService';
 import { AppNotification, NotificationPreferences } from '../lib/supabase';
@@ -22,6 +23,7 @@ const SupabaseNotificationContext = createContext<NotificationContextType | null
 
 export const SupabaseNotificationProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  const location = useLocation();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
@@ -90,6 +92,12 @@ export const SupabaseNotificationProvider = ({ children }: { children: ReactNode
       clearInterval(cleanupInterval);
     };
   }, [user?.id]);
+
+  useEffect(() => {
+    if (user?.id) {
+      refreshNotifications();
+    }
+  }, [location.pathname]);
 
   const markAsRead = async (id: string) => {
     const success = await SupabaseNotificationService.markAsRead(id);

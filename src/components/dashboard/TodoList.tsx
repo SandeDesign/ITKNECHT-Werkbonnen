@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SupabaseNotificationService } from '../../services/SupabaseNotificationService';
 import { collection as firestoreCollection, query as firestoreQuery, where as firestoreWhere, getDocs as firestoreGetDocs } from 'firebase/firestore';
 import TaskFeedbackModal from '../TaskFeedbackModal';
+import TaskCompletionModal, { CompletionStatus } from '../TaskCompletionModal';
 
 interface Todo {
   id: string;
@@ -48,6 +49,9 @@ const TodoList = ({ showAll = false, showAddForm: externalShowAddForm, onShowAdd
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [selectedTodoForFeedback, setSelectedTodoForFeedback] = useState<Todo | null>(null);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [selectedTodoForCompletion, setSelectedTodoForCompletion] = useState<Todo | null>(null);
+  const [isCompleting, setIsCompleting] = useState(false);
   const [todayDate] = useState(new Date().toISOString().split('T')[0]);
   const [formData, setFormData] = useState({
     description: '',
@@ -342,13 +346,42 @@ const TodoList = ({ showAll = false, showAddForm: externalShowAddForm, onShowAdd
   };
 
   const toggleTodoStatus = async (todoId: string, completed: boolean) => {
-    try {
+    if (!completed) {
       const todo = todos.find(t => t.id === todoId);
-      const todoRef = doc(db, 'todos', todoId);
-      await updateDoc(todoRef, { completed: !completed });
+      if (todo) {
+        setSelectedTodoForCompletion(todo);
+        setShowCompletionModal(true);
+      }
+    } else {
+      try {
+        const todoRef = doc(db, 'todos', todoId);
+        await updateDoc(todoRef, { completed: false });
+      } catch (error) {
+        console.error('Error updating todo:', error);
+      }
+    }
+  };
 
-      // Send notification to admins when task is completed by non-admin
-      if (todo && !completed && user?.role !== 'admin') {
+  const handleCompleteTask = async (status: CompletionStatus, notes?: string) => {
+    if (!selectedTodoForCompletion || !user) return;
+
+    setIsCompleting(true);
+    try {
+      const completionData: any = {
+        completed: true,
+        completionStatus: status,
+        completedAt: new Date().toISOString(),
+        completedBy: user.id
+      };
+
+      if (notes) {
+        completionData.completionNotes = notes;
+      }
+
+      const todoRef = doc(db, 'todos', selectedTodoForCompletion.id);
+      await updateDoc(todoRef, completionData);
+
+      if (user.role !== 'admin') {
         try {
           const usersRef = firestoreCollection(db, 'users');
           const adminQuery = firestoreQuery(usersRef, firestoreWhere('role', '==', 'admin'));
@@ -356,31 +389,45 @@ const TodoList = ({ showAll = false, showAddForm: externalShowAddForm, onShowAdd
           const adminIds = adminSnapshot.docs.map(doc => doc.id);
 
           if (adminIds.length > 0) {
+            const statusLabel =
+              status === 'completed' ? 'succesvol voltooid' :
+              status === 'completed_with_issues' ? 'voltooid met problemen' :
+              'mislukt';
+
+            const notificationBody = notes
+              ? `${user.name} heeft een taak ${statusLabel}: ${selectedTodoForCompletion.description}\n\nNotities: ${notes}`
+              : `${user.name} heeft een taak ${statusLabel}: ${selectedTodoForCompletion.description}`;
+
             await SupabaseNotificationService.sendNotificationToAdmins(
               adminIds,
               'TASK_COMPLETED',
-              'Taak voltooid',
-              `${user.name} heeft een taak voltooid: ${todo.description}`,
+              `Taak ${statusLabel}`,
+              notificationBody,
               {
-                task_id: todoId,
+                task_id: selectedTodoForCompletion.id,
                 completed_by: user.name,
                 completed_by_id: user.id,
-                task_description: todo.description
+                task_description: selectedTodoForCompletion.description,
+                completion_status: status,
+                completion_notes: notes
               },
               '/dashboard/taken'
             );
+            console.log(`✅ Notification sent to ${adminIds.length} admin(s)`);
           }
         } catch (error) {
-          console.error('Error sending completion notification:', error);
+          console.error('❌ Error sending completion notification:', error);
         }
       }
 
-      // Create recurring task if needed
-      if (todo && !completed && todo.isRecurring && todo.recurringType === 'on_completion') {
-        await createRecurringTask(todo);
+      if (selectedTodoForCompletion.isRecurring && selectedTodoForCompletion.recurringType === 'on_completion') {
+        await createRecurringTask(selectedTodoForCompletion);
       }
     } catch (error) {
-      console.error('Error updating todo:', error);
+      console.error('Error completing task:', error);
+      throw error;
+    } finally {
+      setIsCompleting(false);
     }
   };
 
@@ -1057,6 +1104,18 @@ const TodoList = ({ showAll = false, showAddForm: externalShowAddForm, onShowAdd
           onSubmit={handleFeedbackSubmit}
           isLoading={isFeedbackLoading}
           taskDescription={selectedTodoForFeedback?.description || ''}
+        />
+
+        {/* Task Completion Modal */}
+        <TaskCompletionModal
+          isOpen={showCompletionModal}
+          onClose={() => {
+            setShowCompletionModal(false);
+            setSelectedTodoForCompletion(null);
+          }}
+          onComplete={handleCompleteTask}
+          taskTitle={selectedTodoForCompletion?.description || ''}
+          isLoading={isCompleting}
         />
       </CardContent>
     </Card>
