@@ -4,7 +4,7 @@ import { db } from '../lib/firebase';
 import { getApp } from 'firebase/app';
 
 // Vapid key voor web push notificaties
-const VAPID_KEY = 'BOH3HEQdIkFOtCBNUho_jLhjor20fTJY2ulPHzuP7m6KSs5IvDy8mvuioszi4CgSpVyjaW c6vfsjzTkl0zW4';
+const VAPID_KEY = 'BOH3HEQ6IkFOtCBBNUho-jI_hjor20RTJY2uIPHzuP7m6KSs5lvDy8mvuioszt4CgSpVxjaW-cGvfsjzTkl0zW4';
 
 // Check if running in StackBlitz WebContainer
 const isWebContainer = typeof window !== 'undefined' && window.location.hostname.includes('webcontainer');
