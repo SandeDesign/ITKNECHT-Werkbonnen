@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { collection, query, where, orderBy, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { Calendar as CalendarIcon, Download } from 'lucide-react';
+import { Calendar as CalendarIcon, Download, CheckCircle2 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { CalendarEvent, CalendarFilters as CalendarFiltersType } from '../types/calendar';
@@ -13,6 +13,8 @@ import WeekGridView from '../components/calendar/WeekGridView';
 import MonthCalendarView from '../components/calendar/MonthCalendarView';
 import CompactFilters from '../components/calendar/CompactFilters';
 import { useCalendarPreferences, CalendarViewType } from '../hooks/useCalendarPreferences';
+import TaskCompletionModal, { CompletionStatus } from '../components/TaskCompletionModal';
+import { SupabaseNotificationService } from '../services/SupabaseNotificationService';
 
 const Calendar = () => {
   const { user } = useAuth();
@@ -24,6 +26,8 @@ const Calendar = () => {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewType>('day');
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const [filters, setFilters] = useState<CalendarFiltersType>({
     status: '',
@@ -187,6 +191,79 @@ const Calendar = () => {
 
   const handleEventClick = (event: CalendarEvent) => {
     setSelectedEvent(event);
+  };
+
+  const handleCompleteTask = async (status: CompletionStatus, notes?: string) => {
+    if (!selectedEvent || !user) return;
+
+    setIsCompleting(true);
+    try {
+      const completionData: any = {
+        completed: true,
+        completionStatus: status,
+        completedAt: new Date().toISOString(),
+        completedBy: user.id
+      };
+
+      if (notes) {
+        completionData.completionNotes = notes;
+      }
+
+      const todoRef = doc(db, 'todos', selectedEvent.id);
+      await updateDoc(todoRef, completionData);
+
+      if (user.role !== 'admin') {
+        try {
+          const usersRef = collection(db, 'users');
+          const adminQuery = query(usersRef, where('role', '==', 'admin'));
+          const adminSnapshot = await getDocs(adminQuery);
+          const adminIds = adminSnapshot.docs.map(doc => doc.id);
+
+          if (adminIds.length > 0) {
+            const statusLabel =
+              status === 'completed' ? 'succesvol voltooid' :
+              status === 'completed_with_issues' ? 'voltooid met problemen' :
+              'mislukt';
+
+            const notificationBody = notes
+              ? `${user.name} heeft een taak ${statusLabel}: ${selectedEvent.title}\n\nNotities: ${notes}`
+              : `${user.name} heeft een taak ${statusLabel}: ${selectedEvent.title}`;
+
+            await SupabaseNotificationService.sendNotificationToAdminsWithPush(
+              adminIds,
+              'TASK_COMPLETED',
+              `Taak ${statusLabel}`,
+              notificationBody,
+              {
+                task_id: selectedEvent.id,
+                completed_by: user.name,
+                completed_by_id: user.id,
+                task_description: selectedEvent.title,
+                completion_status: status,
+                completion_notes: notes
+              },
+              '/dashboard/taken'
+            );
+          }
+        } catch (error) {
+          console.error('Error sending completion notification:', error);
+        }
+      }
+
+      setShowCompletionModal(false);
+      setSelectedEvent(null);
+    } catch (error) {
+      console.error('Error completing task:', error);
+      throw error;
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
+  const canCompleteTask = (event: CalendarEvent): boolean => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    return event.assignedTo === user.id;
   };
 
   const handleNavigate = (direction: 'prev' | 'next') => {
@@ -389,7 +466,7 @@ const Calendar = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full"
+            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
           >
             <Card>
               <div className="p-6">
@@ -449,12 +526,34 @@ const Calendar = () => {
                         : 'Binnenkort'}
                     </span>
                   </div>
+
+                  {!selectedEvent.completed && canCompleteTask(selectedEvent) && (
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <Button
+                        variant="primary"
+                        isFullWidth
+                        onClick={() => setShowCompletionModal(true)}
+                        icon={<CheckCircle2 className="h-5 w-5" />}
+                        className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
+                      >
+                        Taak Afronden
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
           </motion.div>
         </div>
       )}
+
+      <TaskCompletionModal
+        isOpen={showCompletionModal}
+        onClose={() => setShowCompletionModal(false)}
+        onComplete={handleCompleteTask}
+        taskTitle={selectedEvent?.title || ''}
+        isLoading={isCompleting}
+      />
     </div>
   );
 };

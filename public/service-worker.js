@@ -55,45 +55,147 @@ registerRoute(
 // Firebase Cloud Messaging - Achtergrond berichten afhandelen
 messaging.onBackgroundMessage((payload) => {
   console.log('[service-worker.js] Received background message ', payload);
-  
-  const notificationTitle = payload.notification.title;
+
+  const notificationTitle = payload.notification?.title || payload.data?.title || 'IT Knecht';
+  const notificationBody = payload.notification?.body || payload.data?.body || 'Nieuwe notificatie';
+  const notificationIcon = payload.notification?.icon || payload.data?.icon || '/icon-192.png';
+  const actionUrl = payload.data?.action_url || payload.data?.url || '/dashboard';
+
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/icon-192.png',
+    body: notificationBody,
+    icon: notificationIcon,
     badge: '/icon-192.png',
-    data: payload.data
+    data: {
+      ...payload.data,
+      url: actionUrl,
+      timestamp: Date.now()
+    },
+    requireInteraction: false,
+    silent: false,
+    vibrate: [200, 100, 200],
+    tag: payload.data?.notification_id || `notification-${Date.now()}`
   };
-  
-  self.registration.showNotification(notificationTitle, notificationOptions);
+
+  return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // Klik op notificatie afhandelen
 self.addEventListener('notificationclick', (event) => {
   console.log('[service-worker.js] Notification click: ', event);
-  
+
   event.notification.close();
-  
-  // Navigeer naar de juiste pagina op basis van de data in de notificatie
+
   const urlToOpen = event.notification.data?.url || '/dashboard';
-  
+  const notificationId = event.notification.data?.notification_id;
+
   event.waitUntil(
-    clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true
-    })
-    .then((windowClients) => {
-      // Controleer of er al een venster open is
-      for (let i = 0; i < windowClients.length; i++) {
-        const client = windowClients[i];
-        if (client.url.includes(urlToOpen) && 'focus' in client) {
-          return client.focus();
+    (async () => {
+      try {
+        const windowClients = await clients.matchAll({
+          type: 'window',
+          includeUncontrolled: true
+        });
+
+        const baseUrl = self.location.origin;
+        const fullUrl = urlToOpen.startsWith('http') ? urlToOpen : `${baseUrl}${urlToOpen}`;
+
+        for (const client of windowClients) {
+          if (client.url === fullUrl && 'focus' in client) {
+            await client.focus();
+
+            if (notificationId) {
+              client.postMessage({
+                type: 'NOTIFICATION_CLICKED',
+                notificationId: notificationId
+              });
+            }
+            return;
+          }
         }
+
+        if (windowClients.length > 0) {
+          const client = windowClients[0];
+          await client.focus();
+          await client.navigate(fullUrl);
+
+          if (notificationId) {
+            client.postMessage({
+              type: 'NOTIFICATION_CLICKED',
+              notificationId: notificationId
+            });
+          }
+        } else if (clients.openWindow) {
+          const newClient = await clients.openWindow(fullUrl);
+          if (notificationId && newClient) {
+            setTimeout(() => {
+              newClient.postMessage({
+                type: 'NOTIFICATION_CLICKED',
+                notificationId: notificationId
+              });
+            }, 1000);
+          }
+        }
+      } catch (error) {
+        console.error('[service-worker.js] Error handling notification click:', error);
       }
-      
-      // Als er geen venster open is, open een nieuw venster
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
+    })()
   );
+});
+
+// Push event handling voor PWA
+self.addEventListener('push', (event) => {
+  console.log('[service-worker.js] Push event received:', event);
+
+  if (!event.data) {
+    console.log('[service-worker.js] Push event has no data');
+    return;
+  }
+
+  try {
+    const data = event.data.json();
+    console.log('[service-worker.js] Push data:', data);
+
+    const title = data.notification?.title || data.title || 'IT Knecht';
+    const options = {
+      body: data.notification?.body || data.body || '',
+      icon: data.notification?.icon || data.icon || '/icon-192.png',
+      badge: '/icon-192.png',
+      data: {
+        url: data.data?.action_url || data.action_url || '/dashboard',
+        notification_id: data.data?.notification_id || data.notification_id,
+        ...data.data
+      },
+      requireInteraction: false,
+      vibrate: [200, 100, 200],
+      tag: data.tag || `notification-${Date.now()}`
+    };
+
+    event.waitUntil(
+      self.registration.showNotification(title, options)
+    );
+  } catch (error) {
+    console.error('[service-worker.js] Error parsing push data:', error);
+
+    event.waitUntil(
+      self.registration.showNotification('IT Knecht', {
+        body: 'Nieuwe notificatie ontvangen',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png'
+      })
+    );
+  }
+});
+
+// Notification close event
+self.addEventListener('notificationclose', (event) => {
+  console.log('[service-worker.js] Notification closed:', event.notification.tag);
+});
+
+// Message event voor communicatie met client
+self.addEventListener('message', (event) => {
+  console.log('[service-worker.js] Message received:', event.data);
+
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

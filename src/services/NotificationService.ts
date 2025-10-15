@@ -9,8 +9,69 @@ const VAPID_KEY = 'BO2CnzWnp-XxTjp4EgaLh1xygtdB96kkFW3KGs6RlAe4hNZZhHoYYA_YbJisT
 // Check if running in StackBlitz WebContainer
 const isWebContainer = typeof window !== 'undefined' && window.location.hostname.includes('webcontainer');
 
+// Detecteer of de app geinstalleerd is als PWA
+const isPWAInstalled = (): boolean => {
+  if (typeof window === 'undefined') return false;
+
+  // Check voor standalone mode (iOS Safari)
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+  // Check voor iOS Safari specifiek
+  const isIOSStandalone = (window.navigator as any).standalone === true;
+
+  // Check voor Android Chrome
+  const isAndroidStandalone = document.referrer.includes('android-app://');
+
+  return isStandalone || isIOSStandalone || isAndroidStandalone;
+};
+
+// Detecteer device type
+const getDeviceType = (): 'ios' | 'android' | 'web' => {
+  if (typeof window === 'undefined') return 'web';
+
+  const userAgent = window.navigator.userAgent.toLowerCase();
+
+  if (/iphone|ipad|ipod/.test(userAgent)) {
+    return 'ios';
+  } else if (/android/.test(userAgent)) {
+    return 'android';
+  }
+
+  return 'web';
+};
+
+// Detecteer device naam
+const getDeviceName = (): string => {
+  if (typeof window === 'undefined') return 'Unknown Device';
+
+  const userAgent = window.navigator.userAgent;
+
+  // iOS devices
+  if (/iPhone/.test(userAgent)) return 'iPhone';
+  if (/iPad/.test(userAgent)) return 'iPad';
+  if (/iPod/.test(userAgent)) return 'iPod';
+
+  // Android devices
+  if (/Android/.test(userAgent)) {
+    const match = userAgent.match(/Android.*?;\s*([^;)]+)/);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+    return 'Android Device';
+  }
+
+  // Desktop browsers
+  if (/Chrome/.test(userAgent)) return 'Chrome Browser';
+  if (/Firefox/.test(userAgent)) return 'Firefox Browser';
+  if (/Safari/.test(userAgent) && !/Chrome/.test(userAgent)) return 'Safari Browser';
+  if (/Edge/.test(userAgent)) return 'Edge Browser';
+
+  return 'Web Browser';
+};
+
 export class NotificationService {
   private static readonly FCM_TOKEN_KEY = 'itknecht_fcm_token';
+  private static readonly DEVICE_ID_KEY = 'itknecht_device_id';
 
   static async requestPermission(userId: string): Promise<boolean> {
     try {
@@ -63,26 +124,26 @@ export class NotificationService {
         console.log('WebContainer environment - skipping FCM token registration');
         return 'simulated-fcm-token-for-webcontainer';
       }
-      
+
       const app = getApp();
       const messaging = getMessaging(app);
-      
+
       // FCM token ophalen
       const token = await getToken(messaging, {
         vapidKey: VAPID_KEY
       });
-      
+
       if (!token) {
         console.log('No FCM token available');
         return null;
       }
-      
+
       console.log('FCM token received:', token);
-      
+
       // Store token in Firestore
       const userRef = doc(db, 'users', userId);
       const userDoc = await getDoc(userRef);
-      
+
       if (userDoc.exists()) {
         // Update existing user
         await updateDoc(userRef, {
@@ -91,11 +152,35 @@ export class NotificationService {
           },
           notificationsEnabled: true,
           updatedAt: new Date().toISOString(),
-          fcmToken: token, // Add direct token reference for easier access
-          fcmTokenUpdated: new Date().toISOString()
+          fcmToken: token,
+          fcmTokenUpdated: new Date().toISOString(),
+          isPWA: isPWAInstalled(),
+          deviceType: getDeviceType()
         });
       }
-      
+
+      // Registreer device in Supabase via SupabaseNotificationService
+      try {
+        const deviceType = getDeviceType();
+        const deviceName = getDeviceName();
+
+        // Dynamisch importeren om circular dependency te voorkomen
+        const { SupabaseNotificationService } = await import('./SupabaseNotificationService');
+        const deviceId = await SupabaseNotificationService.registerFCMDevice(
+          userId,
+          token,
+          deviceType,
+          deviceName
+        );
+
+        if (deviceId) {
+          localStorage.setItem(this.DEVICE_ID_KEY, deviceId);
+          console.log('Device registered in Supabase:', deviceId);
+        }
+      } catch (supabaseError) {
+        console.error('Error registering device in Supabase:', supabaseError);
+      }
+
       return token;
     } catch (error) {
       console.error('Error registering FCM token:', error);
@@ -107,16 +192,28 @@ export class NotificationService {
     try {
       // Remove from localStorage
       localStorage.removeItem(this.FCM_TOKEN_KEY);
-      
+      const deviceId = localStorage.getItem(this.DEVICE_ID_KEY);
+
       const userRef = doc(db, 'users', userId);
-      
+
       await updateDoc(userRef, {
         [`fcmTokens.${token}`]: false,
         notificationsEnabled: false,
         updatedAt: new Date().toISOString(),
-        fcmToken: null // Clear direct token reference
+        fcmToken: null
       });
-      
+
+      // Deactiveer device in Supabase
+      if (deviceId || token) {
+        try {
+          const { SupabaseNotificationService } = await import('./SupabaseNotificationService');
+          await SupabaseNotificationService.deactivateFCMDevice(token);
+          localStorage.removeItem(this.DEVICE_ID_KEY);
+        } catch (supabaseError) {
+          console.error('Error deactivating device in Supabase:', supabaseError);
+        }
+      }
+
       return true;
     } catch (error) {
       console.error('Error unregistering FCM token:', error);
@@ -242,34 +339,57 @@ export class NotificationService {
   static isNotificationsEnabled(): boolean {
     return !!localStorage.getItem(this.FCM_TOKEN_KEY) || Notification.permission === 'granted';
   }
+
+  // Check if app is installed as PWA
+  static isPWA(): boolean {
+    return isPWAInstalled();
+  }
+
+  // Get device information
+  static getDeviceInfo(): { type: string; name: string; isPWA: boolean } {
+    return {
+      type: getDeviceType(),
+      name: getDeviceName(),
+      isPWA: isPWAInstalled()
+    };
+  }
   
   // Initialize notifications on app start
   static async initializeNotifications(userId: string): Promise<boolean> {
     try {
       console.log('🔔 Initializing notifications for user:', userId);
-      
+      console.log('🔔 Device info:', this.getDeviceInfo());
+
       // Check if we have a stored token
       const storedToken = localStorage.getItem(this.FCM_TOKEN_KEY);
-      
+
       if (storedToken) {
         console.log('🔔 Found stored FCM token, validating...');
-        
+
         // Validate token with Firestore
         const userRef = doc(db, 'users', userId);
         const userDoc = await getDoc(userRef);
-        
+
         if (userDoc.exists()) {
           const userData = userDoc.data();
           const fcmTokens = userData.fcmTokens || {};
-          
+
           // If token is not in Firestore or is marked as inactive, register it again
           if (!fcmTokens[storedToken] || fcmTokens[storedToken] !== true) {
             console.log('🔔 Stored token is invalid or inactive, registering new token');
             return await this.requestPermission(userId);
           }
-          
+
           console.log('🔔 Stored token is valid, notifications are enabled');
-          
+
+          // Update device last_used in Supabase
+          try {
+            const { SupabaseNotificationService } = await import('./SupabaseNotificationService');
+            await SupabaseNotificationService.updateDeviceLastUsed(storedToken);
+          } catch (error) {
+            console.error('Error updating device last used:', error);
+          }
+
           // Make sure notificationsEnabled is set to true in Firestore
           if (!userData.notificationsEnabled) {
             await updateDoc(userRef, {
@@ -277,25 +397,25 @@ export class NotificationService {
               updatedAt: new Date().toISOString()
             });
           }
-          
+
           return true;
         }
       }
-      
+
       // If no stored token or user doesn't exist, check if notifications are enabled in Firestore
       const userRef = doc(db, 'users', userId);
       const userDoc = await getDoc(userRef);
-      
+
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        
+
         // If notifications were previously enabled or we have permission, request again
         if (userData.notificationsEnabled || Notification.permission === 'granted') {
           console.log('🔔 Notifications enabled in Firestore but no valid token, requesting permission');
           return await this.requestPermission(userId);
         }
       }
-      
+
       return false;
     } catch (error) {
       console.error('Error initializing notifications:', error);

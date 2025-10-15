@@ -1,6 +1,18 @@
 import { supabase, AppNotification, NotificationPreferences, NotificationType } from '../lib/supabase';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
+interface FCMDevice {
+  id: string;
+  user_id: string;
+  fcm_token: string;
+  device_type: 'ios' | 'android' | 'web';
+  device_name: string | null;
+  is_active: boolean;
+  last_used: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export class SupabaseNotificationService {
   private static channel: RealtimeChannel | null = null;
 
@@ -358,5 +370,199 @@ export class SupabaseNotificationService {
     } catch (error) {
       console.error('Error cleaning up old notifications:', error);
     }
+  }
+
+  static async registerFCMDevice(
+    userId: string,
+    fcmToken: string,
+    deviceType: 'ios' | 'android' | 'web',
+    deviceName?: string
+  ): Promise<string | null> {
+    try {
+      const { data, error } = await supabase.rpc('upsert_fcm_device', {
+        p_user_id: userId,
+        p_fcm_token: fcmToken,
+        p_device_type: deviceType,
+        p_device_name: deviceName || null
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error registering FCM device:', error);
+      return null;
+    }
+  }
+
+  static async getActiveFCMTokens(userId: string): Promise<Array<{ fcm_token: string; device_type: string; device_name: string }>> {
+    try {
+      const { data, error } = await supabase.rpc('get_active_fcm_tokens', {
+        p_user_id: userId
+      });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting active FCM tokens:', error);
+      return [];
+    }
+  }
+
+  static async updateDeviceLastUsed(fcmToken: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.rpc('update_fcm_device_last_used', {
+        p_fcm_token: fcmToken
+      });
+
+      if (error) throw error;
+      return data === true;
+    } catch (error) {
+      console.error('Error updating device last used:', error);
+      return false;
+    }
+  }
+
+  static async deactivateFCMDevice(fcmToken: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.rpc('deactivate_fcm_device', {
+        p_fcm_token: fcmToken
+      });
+
+      if (error) throw error;
+      return data === true;
+    } catch (error) {
+      console.error('Error deactivating FCM device:', error);
+      return false;
+    }
+  }
+
+  static async getUserDevices(userId: string): Promise<FCMDevice[]> {
+    try {
+      const { data, error } = await supabase
+        .from('fcm_devices')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('last_used', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting user devices:', error);
+      return [];
+    }
+  }
+
+  static async sendFCMPushNotification(
+    userId: string,
+    type: NotificationType,
+    title: string,
+    body: string,
+    metadata: Record<string, any> = {},
+    actionUrl: string | null = null
+  ): Promise<boolean> {
+    try {
+      const notificationId = await this.createNotification(
+        userId,
+        type,
+        title,
+        body,
+        metadata,
+        actionUrl
+      );
+
+      if (!notificationId) {
+        console.error('Failed to create notification in database');
+        return false;
+      }
+
+      const prefs = await this.getPreferences(userId);
+      if (!prefs?.fcm_enabled) {
+        console.log('FCM push notifications disabled for user:', userId);
+        return false;
+      }
+
+      const tokens = await this.getActiveFCMTokens(userId);
+      if (tokens.length === 0) {
+        console.log('No active FCM tokens found for user:', userId);
+        return false;
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error('Supabase credentials not found');
+        return false;
+      }
+
+      const results = await Promise.allSettled(
+        tokens.map(async ({ fcm_token }) => {
+          const response = await fetch(`${supabaseUrl}/functions/v1/send-fcm-notification`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseAnonKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              fcmToken: fcm_token,
+              notification: {
+                title,
+                body
+              },
+              data: {
+                notification_id: notificationId,
+                action_url: actionUrl || '/dashboard',
+                type,
+                ...metadata
+              }
+            })
+          });
+
+          if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`FCM send failed: ${error}`);
+          }
+
+          return response.json();
+        })
+      );
+
+      const successCount = results.filter(r => r.status === 'fulfilled').length;
+      console.log(`FCM push sent to ${successCount}/${tokens.length} devices`);
+
+      return successCount > 0;
+    } catch (error) {
+      console.error('Error sending FCM push notification:', error);
+      return false;
+    }
+  }
+
+  static async sendNotificationToAdminsWithPush(
+    adminUserIds: string[],
+    type: NotificationType,
+    title: string,
+    body: string,
+    metadata: Record<string, any> = {},
+    actionUrl: string | null = null
+  ): Promise<number> {
+    let successCount = 0;
+
+    for (const adminId of adminUserIds) {
+      const success = await this.sendFCMPushNotification(
+        adminId,
+        type,
+        title,
+        body,
+        metadata,
+        actionUrl
+      );
+
+      if (success) {
+        successCount++;
+      }
+    }
+
+    return successCount;
   }
 }
