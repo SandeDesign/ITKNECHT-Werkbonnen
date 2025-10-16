@@ -28,7 +28,6 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/install-guide" element={<InstallGuide />} />
-      <Route path="/dashboard/weekly-hours" element={<WeeklyHours />} />
       <Route 
         path="/dashboard/*" 
         element={
