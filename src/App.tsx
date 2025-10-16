@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
 import InstallGuide from './pages/InstallGuide';
+import WeeklyHours from './pages/WeeklyHours';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
