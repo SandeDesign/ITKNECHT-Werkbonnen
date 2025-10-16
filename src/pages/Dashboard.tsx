@@ -370,6 +370,7 @@ const Dashboard = () => {
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/my-statistics" element={<MyStatistics />} />
             <Route path="/tasks" element={<Tasks />} />
+            <Route path="/dashboard/weekly-hours" element={<WeeklyHours />} />
             <Route path="/werkbonnen/edit/:id" element={<Overview />} />
             <Route path="/colleagues" element={<Colleagues />} />
             <Route path="/colleagues/:id" element={<ColleagueProfile />} />
