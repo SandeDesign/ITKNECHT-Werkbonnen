@@ -25,8 +25,7 @@ import {
   ChevronUp,
   ArrowLeft,
   Shield,
-  UserCircle,
-  Clock
+  UserCircle
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import DashboardHome from './DashboardHome';
@@ -47,7 +46,6 @@ import AdminLayout from './admin/AdminLayout';
 import WebmailModal from '../components/WebmailModal';
 import NotificationCenter from '../components/dashboard/NotificationCenter';
 import NotificationDebug from '../components/dashboard/NotificationDebug';
-import WeeklyHours from './pages/WeeklyHours';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -68,7 +66,6 @@ const Dashboard = () => {
     { name: 'Medewerker Dashboard', href: '/dashboard', icon: UserCircle, showInNav: true },
     { name: 'Werkbon aanmaken', href: '/dashboard/create', icon: Plus, showInNav: true },
     { name: 'Agenda', href: '/dashboard/calendar', icon: CalendarIcon, showInNav: true },
-    { name: 'Week Uren', href: '/dashboard/weekly-hours', icon: Clock, showInNav: true },
     { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3, showInNav: true },
     { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users, showInNav: true },
     { name: 'Contacten', href: '/dashboard/contacts', icon: Contact, showInNav: true },
@@ -78,7 +75,6 @@ const Dashboard = () => {
     { name: 'Home', href: '/dashboard', icon: Home, showInNav: true },
     { name: 'Werkbon aanmaken', href: '/dashboard/create', icon: Plus, showInNav: true },
     { name: 'Agenda', href: '/dashboard/calendar', icon: CalendarIcon, showInNav: true },
-    { name: 'Week Uren', href: '/dashboard/weekly-hours', icon: Clock, showInNav: true },
     { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3, showInNav: true },
     { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users, showInNav: true },
     { name: 'Contacten', href: '/dashboard/contacts', icon: Contact, showInNav: true },
@@ -104,14 +100,12 @@ const Dashboard = () => {
     { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3 },
     { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users },
     { name: 'Contacten', href: '/dashboard/contacts', icon: Contact },
-    { name: 'Week Uren', href: '/dashboard/weekly-hours', icon: Clock},
     { name: 'Ideeën bus', href: '/dashboard/feedback', icon: MessageSquare },
     { name: 'Bronnen', href: '/dashboard/resources', icon: FileText }
   ] : [
     { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3 },
     { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users },
     { name: 'Contacten', href: '/dashboard/contacts', icon: Contact },
-    { name: 'Week Uren', href: '/dashboard/weekly-hours', icon: Clock},
     { name: 'Ideeën bus', href: '/dashboard/feedback', icon: MessageSquare },
     { name: 'Bronnen', href: '/dashboard/resources', icon: FileText }
   ];
@@ -376,7 +370,6 @@ const Dashboard = () => {
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/my-statistics" element={<MyStatistics />} />
             <Route path="/tasks" element={<Tasks />} />
-            <Route path="/dashboard/weekly-hours" element={<WeeklyHours />} />
             <Route path="/werkbonnen/edit/:id" element={<Overview />} />
             <Route path="/colleagues" element={<Colleagues />} />
             <Route path="/colleagues/:id" element={<ColleagueProfile />} />
