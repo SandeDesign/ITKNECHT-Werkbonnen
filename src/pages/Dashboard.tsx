@@ -25,7 +25,8 @@ import {
   ChevronUp,
   ArrowLeft,
   Shield,
-  UserCircle
+  UserCircle,
+  Clock
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import DashboardHome from './DashboardHome';
