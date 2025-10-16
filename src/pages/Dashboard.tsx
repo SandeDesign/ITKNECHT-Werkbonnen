@@ -67,6 +67,7 @@ const Dashboard = () => {
     { name: 'Medewerker Dashboard', href: '/dashboard', icon: UserCircle, showInNav: true },
     { name: 'Werkbon aanmaken', href: '/dashboard/create', icon: Plus, showInNav: true },
     { name: 'Agenda', href: '/dashboard/calendar', icon: CalendarIcon, showInNav: true },
+    { name: 'Week Uren', href: '/dashboard/weekly-hours', icon: Clock, showInNav: true },
     { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3, showInNav: true },
     { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users, showInNav: true },
     { name: 'Contacten', href: '/dashboard/contacts', icon: Contact, showInNav: true },
