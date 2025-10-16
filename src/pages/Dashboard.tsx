@@ -46,6 +46,7 @@ import AdminLayout from './admin/AdminLayout';
 import WebmailModal from '../components/WebmailModal';
 import NotificationCenter from '../components/dashboard/NotificationCenter';
 import NotificationDebug from '../components/dashboard/NotificationDebug';
+import WeeklyHours from './pages/WeeklyHours';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
