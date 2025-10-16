@@ -103,12 +103,14 @@ const Dashboard = () => {
     { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3 },
     { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users },
     { name: 'Contacten', href: '/dashboard/contacts', icon: Contact },
+    { name: 'Week Uren', href: '/dashboard/weekly-hours', icon: Clock},
     { name: 'Ideeën bus', href: '/dashboard/feedback', icon: MessageSquare },
     { name: 'Bronnen', href: '/dashboard/resources', icon: FileText }
   ] : [
     { name: 'Mijn Statistieken', href: '/dashboard/my-statistics', icon: BarChart3 },
     { name: 'Collega\'s', href: '/dashboard/colleagues', icon: Users },
     { name: 'Contacten', href: '/dashboard/contacts', icon: Contact },
+    { name: 'Week Uren', href: '/dashboard/weekly-hours', icon: Clock},
     { name: 'Ideeën bus', href: '/dashboard/feedback', icon: MessageSquare },
     { name: 'Bronnen', href: '/dashboard/resources', icon: FileText }
   ];
